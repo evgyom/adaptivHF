@@ -6,7 +6,7 @@ ax = plt.axes()
 
 def update_points(num):
     print(num)
-    return [ax.scatter([0, 0], [num*0.01, num*0.01], s=10,c='r')]
+    return [ax.scatter([0, 0], [1, (num*0.01)%1], s=10,c='r')]
 
 
 ani = animation.FuncAnimation(fig,
