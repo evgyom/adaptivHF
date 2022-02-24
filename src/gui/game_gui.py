@@ -10,6 +10,8 @@ BLOCK_SIZE   = 20
 # Colors
 GRID_COLOR     = (60, 60, 60)
 BACK_COLOR     = (100, 100, 100)
+BOARD_COLOR    = (40, 40, 40)
+TEXT_COLOR     = (180, 180, 180)
 PLAYER_1_COLOR = (100, 51, 0)
 PLAYER_2_COLOR = (204, 0, 153)
 PLAYER_3_COLOR = (0, 0, 255)
@@ -54,6 +56,7 @@ def main():
     pygame.display.set_caption("AdaptIO")
     CLOCK = pygame.time.Clock()
     SCREEN.fill(BACK_COLOR)
+
     # Init game Class
     adaptIO = AdaptIO()
 
@@ -139,34 +142,64 @@ class AdaptIO():
             self.map_actual[span_points[i][0], span_points[i][1]] = players[i]
 
     def drawGrid(self):
-            """
-            Draw the grid pattern of the map.
-            """
-            blockSize = BLOCK_SIZE #Set the size of the grid block
-            width     = BLOCK_NUM*BLOCK_SIZE
-            height    = BLOCK_NUM*BLOCK_SIZE
+        """
+        Draw the grid pattern of the map.
+        """
+        blockSize = BLOCK_SIZE #Set the size of the grid block
+        width     = BLOCK_NUM*BLOCK_SIZE
+        height    = BLOCK_NUM*BLOCK_SIZE
 
-            for x in range(0, width, blockSize):
-                for y in range(0, height, blockSize):
-                    rect = pygame.Rect(x, y, blockSize, blockSize)
-                    pygame.draw.rect(SCREEN, GRID_COLOR, rect, 1)
+        for x in range(0, width, blockSize):
+            for y in range(0, height, blockSize):
+                rect = pygame.Rect(x, y, blockSize, blockSize)
+                pygame.draw.rect(SCREEN, GRID_COLOR, rect, 1)
 
     def drawScoreBoard(self):
-            """
-            Draw the scoreboard on the GUI.
-            """
-            rect = pygame.Rect(BLOCK_NUM*BLOCK_SIZE, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
-            pygame.draw.rect(SCREEN, GRID_COLOR, rect, 0)
+        """
+        Draw the scoreboard on the GUI.
+        """
+        rect = pygame.Rect(BLOCK_NUM*BLOCK_SIZE, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+        pygame.draw.rect(SCREEN, GRID_COLOR, rect, 0)
+        self.drawPlayerBoard(BLOCK_NUM * BLOCK_SIZE + 2, (5 * BLOCK_SIZE - 4)*0 + 2, PLAYER_1)
+        self.drawPlayerBoard(BLOCK_NUM * BLOCK_SIZE + 2, (5 * BLOCK_SIZE - 4)*1 + 4, PLAYER_2)
+        self.drawPlayerBoard(BLOCK_NUM * BLOCK_SIZE + 2, (5 * BLOCK_SIZE - 4)*2 + 6, PLAYER_3)
+        self.drawPlayerBoard(BLOCK_NUM * BLOCK_SIZE + 2, (5 * BLOCK_SIZE - 4)*3 + 8, PLAYER_4)
+
 
     def drawBlock(self, num_x, num_y, color):
-            """
-            Draw one element of the map with the desired color.
-            :param num_x: Grid element number from the left.
-            :param num_y: Grid element number from the top.
-            :param color: Desired color.
-            """
-            rect = pygame.Rect(num_x*BLOCK_SIZE+2, num_y*BLOCK_SIZE+2, BLOCK_SIZE-4, BLOCK_SIZE-4)
-            pygame.draw.rect(SCREEN, color, rect, 0)
+        """
+        Draw one element of the map with the desired color.
+        :param num_x: Grid element number from the left.
+        :param num_y: Grid element number from the top.
+        :param color: Desired color.
+        """
+        rect = pygame.Rect(num_x*BLOCK_SIZE+2, num_y*BLOCK_SIZE+2, BLOCK_SIZE-4, BLOCK_SIZE-4)
+        pygame.draw.rect(SCREEN, color, rect, 0)
+
+    def drawPlayerBoard(self, x, y, player):
+        """
+        Draw one Player Board with size and name texts.
+        :param x: Top left corner x position
+        :param y: Top left corner y position
+        :param player: player number
+        """
+        width = WINDOW_WIDTH - (BLOCK_NUM * BLOCK_SIZE) - 8
+        height = (5 * BLOCK_SIZE) - 8
+        rect = pygame.Rect(x + 2, y + 2, width, height)
+        pygame.draw.rect(SCREEN, BOARD_COLOR, rect, 0)
+        flag = pygame.Rect(x+8, y+8, 20 , height - 12)
+        pygame.draw.rect(SCREEN, numTOcolor[player], flag, 0)
+
+        font = pygame.font.SysFont(None, 30)
+        sttr = 'Player ' + str(player-3)
+        text_player = font.render(sttr, True, TEXT_COLOR)
+        text_name = font.render('#Name ', True, TEXT_COLOR)
+        text_size = font.render('Size: ', True, TEXT_COLOR)
+        SCREEN.blit(text_player, (x + 40, y + 8))
+        SCREEN.blit(text_name,   (x + 50, y + 8 + 30))
+        SCREEN.blit(text_size,   (x + 40, y + 8 + 60))
+
+
 
 # Run the GUI.
 if __name__ == '__main__':
