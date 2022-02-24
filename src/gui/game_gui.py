@@ -73,25 +73,13 @@ def main():
     adaptIO.spanPlayers()
 
     adaptIO.updateMap()
+    adaptIO.drawTick()
 
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
                 print('AdaptIO is closed!')
-
-
-        #update grid (firs player, second grown)
-        """
-        adaptIO.drawBlock(1, 1, HIGH_COLOR)
-        adaptIO.drawBlock(1, 2, MID_COLOR)
-        adaptIO.drawBlock(1, 3, LOW_COLOR)
-
-        adaptIO.drawBlock(5, 1, PLAYER_1_COLOR)
-        adaptIO.drawBlock(5, 2, PLAYER_2_COLOR)
-        adaptIO.drawBlock(5, 3, PLAYER_3_COLOR)
-        adaptIO.drawBlock(5, 4, PLAYER_4_COLOR)
-        """
 
         pygame.display.update()
 
@@ -199,7 +187,12 @@ class AdaptIO():
         SCREEN.blit(text_name,   (x + 50, y + 8 + 30))
         SCREEN.blit(text_size,   (x + 40, y + 8 + 60))
 
-
+    def drawTick(self):
+        font = pygame.font.SysFont(None, 40)
+        text_tick_head = font.render('Tick Count', True, TEXT_COLOR)
+        text_tick      = font.render('#Tick', True, TEXT_COLOR)
+        SCREEN.blit(text_tick_head, (830, 540))
+        SCREEN.blit(text_tick, (870, 600))
 
 # Run the GUI.
 if __name__ == '__main__':
