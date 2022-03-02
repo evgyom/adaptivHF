@@ -1,5 +1,8 @@
+import time
+
 import numpy as np
 import pygame
+from threading import Thread
 
 # Size (800 x 800 pixel map = 40 x 40 grid
 WINDOW_HEIGHT = 800
@@ -47,6 +50,9 @@ numTOcolor = {
     WALL:     WALL_COLOR,
 }
 
+# TODO: main-t objectbe csomagolni, függvény amivel ki lehet léptetni kívülrõl, paraméter aminek függvényt lehet megadni, amit meghív ha X-et nyomunk,
+#  update függvény az objektumnak, aminek be tudok adni 1 numpy tömböt ami a map, meg egy Player object tömböt, meg egy tick számot, ez alapján pedig rajzol, a player objectek tömbje alapján
+
 def main():
     global SCREEN, CLOCK
     run = True
@@ -81,6 +87,7 @@ def main():
                 run = False
                 print('AdaptIO is closed!')
 
+        adaptIO.updateMap()
         pygame.display.update()
 
     pygame.quit()
@@ -197,4 +204,7 @@ class AdaptIO():
 # Run the GUI.
 if __name__ == '__main__':
     print('AdaptIO is started!')
-    main()
+    t = Thread(target=main)
+    t.start()
+    time.sleep(10)
+    t.
