@@ -42,7 +42,7 @@ class SocketClient:
         server_addr = (host, port)
         print(f"Starting connection to {server_addr}")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setblocking(True)
+        sock.setblocking(False)
         sock.connect_ex(server_addr)
         events = selectors.EVENT_READ | selectors.EVENT_WRITE
         self.sel.register(sock, events)
