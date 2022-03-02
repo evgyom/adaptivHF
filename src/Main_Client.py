@@ -66,12 +66,12 @@ class NaiveHunterStrategy:
                 elif jsonData["vision"][idx]["relative_coord"][i] < 0:
                     actstring += "-"
 
-            sendData(json.dumps({"command":"SetAction","name":"Player","payload":actstring}))
+            sendData(json.dumps({"command":"SetAction","name":"Nata","payload":actstring}))
 
 
 hunter = NaiveHunterStrategy()
 
 
-client = SocketClient("localhost",20201, hunter.processObservation)
+client = SocketClient("46.107.162.203",25660, hunter.processObservation)
 client.start()
-client.sendData(json.dumps({"command": "SetName", "name": "Player", "payload": None}))
+client.sendData(json.dumps({"command": "SetName", "name": "Nata", "payload": None}))

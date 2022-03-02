@@ -5,13 +5,13 @@ from matplotlib import animation
 import matplotlib.pyplot as plt
 
 
-serv = MultiSocketServer("localhost",20201,"asd",["Player"])
+serv = MultiSocketServer("192.168.1.102",25660,"asd",["Balazs","Nata"])
 serv.start()
 
 time.sleep(5)
 
 engine = AdaptIOEngine("./gui/maps/base_field.txt", 5, 1.1,
-                       {"Player": "remoteplayer", "Teszt2": "randombot", "Teszt3": "randombot", "Teszt4": "randombot"}, 5,
+                       {"Balazs": "remoteplayer", "Nata": "remoteplayer", "Teszt3": "randombot", "Teszt4": "randombot"}, 5,
                        "static",sender=serv.sendData, getter=serv.getLatestForName)
 
 
