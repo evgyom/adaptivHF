@@ -1,8 +1,28 @@
 import numpy as np
+import json
+
+
+class RemotePlayerStrategy:
+    def __init__(self, **kwargs):
+        self.nextAction = "0"
+        self.sendData = kwargs["sender"]
+        self.getData = kwargs["getter"]
+        self.name = kwargs["name"]
+
+    def setObservations(self, ownObject, fieldDict):
+        self.nextAction = "0"
+        self.sendData(json.dumps(fieldDict), ownObject.name)
+
+    def getNextAction(self):
+        newaction = self.getData(self.name)
+        if newaction is None:
+            return self.nextAction
+        else:
+            return newaction
 
 
 class RandBotStrategy:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.nextAction = 0
 
     def setObservations(self, ownObject, fieldDict):
@@ -19,7 +39,7 @@ class RandBotStrategy:
 
 
 class NaiveStrategy:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.nextAction = "0"
         self.oldpos = None
         self.oldcounter = 0
@@ -43,7 +63,7 @@ class NaiveStrategy:
         values = np.array([field["value"] for field in fieldDict["vision"]])
         values[values > 3] = 0
         values[values < 0] = 0
-        if np.max(values) == 0 or self.oldcounter>=3:
+        if np.max(values) == 0 or self.oldcounter >= 3:
             self.nextAction = self.getRandomAction()
             self.oldcounter = 0
         else:
@@ -64,7 +84,7 @@ class NaiveStrategy:
 
 
 class NaiveHunterStrategy:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.nextAction = "0"
         self.oldpos = None
         self.oldcounter = 0
@@ -90,14 +110,14 @@ class NaiveHunterStrategy:
         vals = []
         for field in fieldDict["vision"]:
             if field["player"] is not None:
-                if tuple(field["relative_coord"])==(0,0):
+                if tuple(field["relative_coord"]) == (0, 0):
                     if 0 < field["value"] <= 3:
                         vals.append(field["value"])
                     elif field["value"] == 9:
                         vals.append(-1)
                     else:
                         vals.append(0)
-                elif field["player"]["size"]*1.1<ownObject.size:
+                elif field["player"]["size"] * 1.1 < ownObject.size:
                     vals.append(field["player"]["size"])
                 else:
                     vals.append(-1)
@@ -110,8 +130,8 @@ class NaiveHunterStrategy:
                     vals.append(0)
 
         values = np.array(vals)
-        #print(values, fieldDict["vision"][np.argmax(values)]["relative_coord"], values.max())
-        if np.max(values) <= 0 or self.oldcounter>=3:
+        # print(values, fieldDict["vision"][np.argmax(values)]["relative_coord"], values.max())
+        if np.max(values) <= 0 or self.oldcounter >= 3:
             self.nextAction = self.getRandomAction()
             self.oldcounter = 0
         else:
@@ -132,16 +152,18 @@ class NaiveHunterStrategy:
 
 
 class Player:
-    strategies = {"randombot": RandBotStrategy, "naivebot": NaiveStrategy, "naivehunterbot": NaiveHunterStrategy}
+    strategies = {"randombot": RandBotStrategy, "naivebot": NaiveStrategy, "naivehunterbot": NaiveHunterStrategy,
+                  "remoteplayer": RemotePlayerStrategy}
 
-    def __init__(self, name, playerType, startingSize):
+    def __init__(self, name, playerType, startingSize, **kwargs):
         self.name = name
         self.playerType = playerType
         self.pos = np.zeros((2,))
         self.size = startingSize
-        self.strategy = Player.strategies[playerType]()
+        kwargs["name"] = name
+        self.strategy = Player.strategies[playerType](**kwargs)
         self.active = True
 
     def die(self):
         self.active = False
-        print(self.name+" died!")
+        print(self.name + " died!")

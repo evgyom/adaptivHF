@@ -7,6 +7,11 @@ from queue import Queue
 import json
 import struct
 
+
+def actionHandler(name, payload, server):
+    if name in server.playerNames+[server.masterName]:
+        server.queues[name].put(payload)
+
 class MultiSocketServer:
     def __init__(self, ip, port, masterName, playerNames):
         self.host = ip
@@ -16,6 +21,10 @@ class MultiSocketServer:
         self.playerNames = playerNames
 
         self.sendQueues = {}
+
+        self.eventHandlers = {}
+        self.eventHandlers["SetAction"]= actionHandler
+
 
         self.queues = {}
         for name in self.playerNames+[self.masterName,]:
@@ -32,7 +41,6 @@ class MultiSocketServer:
                 queue.queue.clear()
 
     def start(self):
-        self.keys = []
         self.running = True
         self.t = Thread(target=self._run)
         self.t.start()
@@ -56,13 +64,22 @@ class MultiSocketServer:
             return datacls["command"], datacls["name"], datacls["payload"]
 
     def sendData(self, data, name):
-        print(data, name)
+        #print(data, name)
         if name == all:
             for key, queue in self.sendQueues.items():
                 queue.put(data)
         elif name in self.sendQueues.keys():
             self.sendQueues[name].put(data)
 
+    def getLatestForName(self, name):
+        if name in self.playerNames+[self.masterName,]:
+            if self.queues[name].empty():
+                return None
+            else:
+                action = None
+                while not self.queues[name].empty():
+                    action = self.queues[name].get()
+                return action
 
     def accept_wrapper(self,sock):
         conn, addr = sock.accept()  # Should be ready to read
@@ -70,22 +87,28 @@ class MultiSocketServer:
         conn.setblocking(False)
         data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"", name=None)
         events = selectors.EVENT_READ | selectors.EVENT_WRITE
-        self.keys.append(self.sel.register(conn, events, data=data))
+        self.sel.register(conn, events, data=data)
 
 
     def service_connection(self, key, mask):
         sock = key.fileobj
         data = key.data
         if mask & selectors.EVENT_READ:
-            size = struct.unpack("i", sock.recv(struct.calcsize("i")))[0]
             recv_data = ""
-            while len(recv_data) < size:
-                msg = sock.recv(size - len(recv_data))
-                if not msg:
-                    break
-                recv_data += msg.decode('utf-8')
+            try:
+                size = struct.unpack("i", sock.recv(struct.calcsize("i")))[0]
+                while len(recv_data) < size:
+                    msg = sock.recv(size - len(recv_data))
+                    if not msg:
+                        break
+                    recv_data += msg.decode('utf-8')
+            except:
+                pass
             if recv_data != "":
                 command, name, payload = self.readData(recv_data, data.name)
+                if command in self.eventHandlers.keys():
+                    self.eventHandlers[command](name, payload, self)
+
                 if command == "SetName" and name is not None and name != "all":
                         data.name = name
             else:

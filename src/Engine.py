@@ -19,7 +19,7 @@ class AdaptIOEngine:
         elif r == 3:
             return pos + np.array([-1, 0])
 
-    def __init__(self, mapPath, startingSize, minRatio, strategyDict, visionRange, updateMode):
+    def __init__(self, mapPath, startingSize, minRatio, strategyDict, visionRange, updateMode, **kwargs):
         self.mapPath = mapPath
         self.field, self.size = self.prepareField(self.mapPath)
         self.startField = self.field
@@ -28,12 +28,13 @@ class AdaptIOEngine:
         self.visionRange = visionRange
         self.updateMode = updateMode
         self.visibilityMask = self.genVisibilityMask()
+        self.ticknum = 0
 
         ids = list(range(4))
         random.shuffle(ids)
 
         self.players = [
-            Player(list(strategyDict.keys())[ids[i]], list(strategyDict.values())[ids[i]], self.startingSize) for i in
+            Player(list(strategyDict.keys())[ids[i]], list(strategyDict.values())[ids[i]], self.startingSize, **kwargs) for i in
             range(4)]
 
         diffFromSide = 1
@@ -41,14 +42,14 @@ class AdaptIOEngine:
         self.players[1].pos = np.array([self.size - diffFromSide - 1, 0 + diffFromSide])
         self.players[2].pos = np.array([0 + diffFromSide, self.size - diffFromSide - 1])
         self.players[3].pos = np.array([self.size - diffFromSide - 1, self.size - diffFromSide - 1])
-        #print([player.pos for player in self.players])
+        # print([player.pos for player in self.players])
 
     def genVisibilityMask(self):
         coordlist = []
         for i in np.arange(-self.visionRange, self.visionRange + 1):
             for j in np.arange(-self.visionRange, self.visionRange + 1):
                 if np.sqrt(i ** 2 + j ** 2) <= self.visionRange:
-                    coordlist.append((i, j))
+                    coordlist.append((int(i), int(j)))
 
         return coordlist
 
@@ -117,16 +118,16 @@ class AdaptIOEngine:
 
         colliding = []
         for i in range(len(positions)):
-            #print(i)
+            # print(i)
             if tuple(positions[i]) == tuple(valueToHandle):
                 colliding.append(i)
 
         sizes = np.array([self.players[i].size for i in colliding])
         idx = np.argsort(sizes)[::-1]
-        #print(sizes, idx)
+        # print(sizes, idx)
         if sizes[idx[0]] >= sizes[idx[1]] * self.minRatio:
             newsize = np.sum(sizes)
-            #print(newsize)
+            # print(newsize)
             self.players[colliding[idx[0]]].size = newsize
             colliding.remove(colliding[idx[0]])
             for dead in colliding:
@@ -137,8 +138,9 @@ class AdaptIOEngine:
                 newpos[i] = oldPositions[i].copy()
         return newpos
 
-    def surveyArea(self, pos):
-        observation = {"pos": pos, "vision": []}
+    def surveyArea(self, player):
+        pos = player.pos
+        observation = {"pos": pos.tolist(), "tick": self.ticknum, "active":player.active, "size":player.size, "vision": []}
         playerpos = [tuple(player.pos) for player in self.players if player.active]
         for diffcoord in self.visibilityMask:
             vispos = pos + np.array(diffcoord)
@@ -154,7 +156,6 @@ class AdaptIOEngine:
             else:
                 val = self.field[int(vispos[0]), int(vispos[1])]
             observation["vision"].append({"relative_coord": diffcoord, "value": val, "player": playerDict})
-
         return observation
 
     def updatePlayers(self, newpos):
@@ -183,7 +184,7 @@ class AdaptIOEngine:
             counts = Counter(positions)
             for collisionTile, cnt in counts.items():
                 if cnt > 1 and collisionTile is not None:
-                    #print(positions)
+                    # print(positions)
                     newpos = self.handleCollision_oldpos(newpos, oldpos, collisionTile)
                     checked = False
 
@@ -206,4 +207,6 @@ class AdaptIOEngine:
         self.updateFood()
 
         for i in range(len(self.players)):
-            self.players[i].strategy.setObservations(self.players[i], self.surveyArea(self.players[i].pos))
+            self.players[i].strategy.setObservations(self.players[i], self.surveyArea(self.players[i]))
+
+        self.ticknum += 1
