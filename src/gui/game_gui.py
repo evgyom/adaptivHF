@@ -50,7 +50,8 @@ numTOcolor = {
     WALL:     WALL_COLOR,
 }
 
-# TODO: main-t objectbe csomagolni, függvény amivel ki lehet léptetni kívülrõl, paraméter aminek függvényt lehet megadni, amit meghív ha X-et nyomunk,
+# TODO: main-t objectbe csomagolni, függvény amivel ki lehet léptetni kívülrõl,
+#  paraméter aminek függvényt lehet megadni, amit meghív ha X-et nyomunk,
 #  update függvény az objektumnak, aminek be tudok adni 1 numpy tömböt ami a map, meg egy Player object tömböt, meg egy tick számot, ez alapján pedig rajzol, a player objectek tömbje alapján
 
 def main():

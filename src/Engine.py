@@ -3,6 +3,7 @@ from collections import Counter
 import random
 from Player import *
 
+
 class AdaptIOEngine:
     neighbourDifferencies = {0: np.array([0, 1]), 1: np.array([0, -1]), 2: np.array([1, 0]), 3: np.array([-1, 0])}
 
@@ -35,11 +36,12 @@ class AdaptIOEngine:
             Player(list(strategyDict.keys())[ids[i]], list(strategyDict.values())[ids[i]], self.startingSize) for i in
             range(4)]
 
-        diffFromSide = 2
+        diffFromSide = 1
         self.players[0].pos = np.array([0 + diffFromSide, 0 + diffFromSide])
-        self.players[1].pos = np.array([self.size - diffFromSide, 0 + diffFromSide])
-        self.players[2].pos = np.array([0 + diffFromSide, self.size - diffFromSide])
-        self.players[3].pos = np.array([self.size - diffFromSide, self.size - diffFromSide])
+        self.players[1].pos = np.array([self.size - diffFromSide - 1, 0 + diffFromSide])
+        self.players[2].pos = np.array([0 + diffFromSide, self.size - diffFromSide - 1])
+        self.players[3].pos = np.array([self.size - diffFromSide - 1, self.size - diffFromSide - 1])
+        #print([player.pos for player in self.players])
 
     def genVisibilityMask(self):
         coordlist = []
@@ -81,7 +83,7 @@ class AdaptIOEngine:
 
         if not self.checkBound(pos):
             pos = oldpos
-        return pos
+        return pos.copy()
 
     def handleCollision_randomized(self, positions, oldPositions, valueToHandle):
         newpos = positions.copy()
@@ -115,29 +117,29 @@ class AdaptIOEngine:
 
         colliding = []
         for i in range(len(positions)):
+            #print(i)
             if tuple(positions[i]) == tuple(valueToHandle):
                 colliding.append(i)
 
         sizes = np.array([self.players[i].size for i in colliding])
-        idx = np.argsort(sizes)
+        idx = np.argsort(sizes)[::-1]
+        #print(sizes, idx)
         if sizes[idx[0]] >= sizes[idx[1]] * self.minRatio:
             newsize = np.sum(sizes)
+            #print(newsize)
+            self.players[colliding[idx[0]]].size = newsize
             colliding.remove(colliding[idx[0]])
             for dead in colliding:
                 self.players[dead].die()
 
-            self.players[idx[0]].size = newsize
-
         else:
-            j = 0
             for i in colliding:
                 newpos[i] = oldPositions[i].copy()
-                j += 1
         return newpos
 
     def surveyArea(self, pos):
         observation = {"pos": pos, "vision": []}
-        playerpos = [tuple(player.pos) for player in self.players]
+        playerpos = [tuple(player.pos) for player in self.players if player.active]
         for diffcoord in self.visibilityMask:
             vispos = pos + np.array(diffcoord)
             if tuple(vispos) in playerpos:
@@ -157,6 +159,8 @@ class AdaptIOEngine:
 
     def updatePlayers(self, newpos):
         for i in range(len(self.players)):
+            if not self.players[i].active:
+                continue
             self.players[i].pos = newpos[i]
             if 0 < self.field[newpos[i][0], newpos[i][1]] <= 3:
                 self.players[i].size += self.field[newpos[i][0], newpos[i][1]]
@@ -172,10 +176,14 @@ class AdaptIOEngine:
         checked = False
         while not checked:
             checked = True
-            counts = Counter([tuple(n) for n in newpos])
+            positions = [tuple(n) for n in newpos]
+            for i in range(4):
+                if not self.players[i].active:
+                    positions[i] = None
+            counts = Counter(positions)
             for collisionTile, cnt in counts.items():
-                if cnt > 1:
-                    print(counts)
+                if cnt > 1 and collisionTile is not None:
+                    #print(positions)
                     newpos = self.handleCollision_oldpos(newpos, oldpos, collisionTile)
                     checked = False
 
@@ -183,11 +191,14 @@ class AdaptIOEngine:
 
     def tick(self):
         actions = [player.strategy.getNextAction() for player in self.players]
-        pos = [player.pos for player in self.players]
+        pos = [player.pos.copy() for player in self.players]
 
         newpos = []
         for i in range(len(self.players)):
-            newpos.append(self.makeAction(actions[i], pos[i]))
+            if not self.players[i].active:
+                newpos.append(pos[i].copy())
+            else:
+                newpos.append(self.makeAction(actions[i], pos[i].copy()))
 
         newpos = self.checkCollision(newpos, pos)
         self.updatePlayers(newpos)
@@ -195,4 +206,4 @@ class AdaptIOEngine:
         self.updateFood()
 
         for i in range(len(self.players)):
-            self.players[i].strategy.setObservations(self.players[i].pos, self.surveyArea(self.players[i].pos))
+            self.players[i].strategy.setObservations(self.players[i], self.surveyArea(self.players[i].pos))
