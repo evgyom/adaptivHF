@@ -89,6 +89,7 @@ class SocketClient:
                         self.service_connection(key, mask)
                 # Check for a socket being monitored to continue.
                 if not self.sel.get_map():
+                    print("Closing")
                     break
         except KeyboardInterrupt:
             print("Caught keyboard interrupt, exiting")
