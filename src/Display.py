@@ -2,7 +2,7 @@ from matplotlib import animation
 import matplotlib.pyplot as plt
 from Engine import *
 
-engine = AdaptIOEngine("./gui/maps/base_field.txt", 5, 1.1,
+engine = AdaptIOEngine("./maps/base_field.txt", 5, 1.1,
                        {"Teszt1": "naivehunterbot", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}, 5,
                        "static")
 
@@ -11,9 +11,9 @@ ax = plt.axes()
 
 def color(alive):
     if alive:
-        return "r"
+        return "r"    # r is red
     else:
-        return "k"
+        return "k"    # k is black
 
 def update_points(num):
     engine.tick()

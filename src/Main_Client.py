@@ -2,8 +2,6 @@ from Client import SocketClient
 import json
 import numpy as np
 
-
-
 class NaiveHunterStrategy:
     def __init__(self, **kwargs):
         self.nextAction = "0"
@@ -20,6 +18,7 @@ class NaiveHunterStrategy:
         return action
 
     def processObservation(self, jsonData, sendData):
+        print(jsonData)
         if self.oldpos is not None:
             if tuple(self.oldpos) == tuple(jsonData["pos"]):
                 self.oldcounter += 1
@@ -53,7 +52,7 @@ class NaiveHunterStrategy:
         values = np.array(vals)
         #print(values, jsonData["vision"][np.argmax(values)]["relative_coord"], values.max())
         if np.max(values) <= 0 or self.oldcounter>=3:
-            self.nextAction = self.getRandomAction()
+            actstring = self.getRandomAction()
             self.oldcounter = 0
         else:
             idx = np.argmax(values)
@@ -66,7 +65,7 @@ class NaiveHunterStrategy:
                 elif jsonData["vision"][idx]["relative_coord"][i] < 0:
                     actstring += "-"
 
-            sendData(json.dumps({"command":"SetAction","name":"Nata","payload":actstring}))
+        sendData(json.dumps({"command":"SetAction","name":"Balazs","payload":actstring}))
 
 
 hunter = NaiveHunterStrategy()
@@ -74,4 +73,4 @@ hunter = NaiveHunterStrategy()
 
 client = SocketClient("46.107.162.203",25660, hunter.processObservation)
 client.start()
-client.sendData(json.dumps({"command": "SetName", "name": "Nata", "payload": None}))
+client.sendData(json.dumps({"command": "SetName", "name": "Balazs", "payload": None}))
