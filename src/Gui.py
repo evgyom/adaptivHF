@@ -51,9 +51,7 @@ numTOcolor = {
     WALL:     WALL_COLOR,
 }
 
-# TODO: main-t objectbe csomagolni, f�ggv�ny amivel ki lehet l�ptetni k�v�lr�l,
 #  parameter aminek függvenyt lehet megadni, amit meghalv ha X-et nyomunk,
-#  update f�ggv�ny az objektumnak, aminek be tudok adni 1 numpy t�mb�t ami a map, meg egy Player object t�mb�t, meg egy tick sz�mot, ez alapj�n pedig rajzol, a player objectek t�mbje alapj�n
 
 def gui():
     # Teszt data
@@ -92,6 +90,7 @@ class AdaptIO():
         pygame.init()
 
         self.run = True
+        self.updated = True
         #self.map_original = np.zeros([BLOCK_NUM, BLOCK_NUM])
         #self.map_actual   = np.zeros([BLOCK_NUM, BLOCK_NUM])
         self.SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -109,6 +108,7 @@ class AdaptIO():
         print('AdaptIO is started!')
 
     def updateDisplayInfo(self, tick, players, map):
+        self.updated = True
         self.tick = tick
         self.map = map
         self.players = players
@@ -125,7 +125,9 @@ class AdaptIO():
                 if event.type == pygame.QUIT:
                     self.run = False
                     print('AdaptIO is closed!')
-            self.updateDisplay()
+            if self.updated:
+                self.updateDisplay()
+                self.updated = False
             pygame.display.update()
         pygame.quit()
 
