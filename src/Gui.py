@@ -10,6 +10,7 @@ WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 1000
 BLOCK_NUM    = 40
 BLOCK_SIZE   = 20
+FPS          = 40
 
 # Colors
 GRID_COLOR     = (60, 60, 60)
@@ -94,7 +95,7 @@ class AdaptIO():
         #self.map_original = np.zeros([BLOCK_NUM, BLOCK_NUM])
         #self.map_actual   = np.zeros([BLOCK_NUM, BLOCK_NUM])
         self.SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-
+        self.CLOCK = pygame.time.Clock()
         pygame.display.set_caption("AdaptIO")
         self.SCREEN.fill(BACK_COLOR)
 
@@ -129,6 +130,7 @@ class AdaptIO():
                 self.updateDisplay()
                 self.updated = False
             pygame.display.update()
+            self.CLOCK.tick(FPS)
         pygame.quit()
 
     def kill(self):
