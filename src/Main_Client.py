@@ -2,6 +2,8 @@ from Client import SocketClient
 import json
 import numpy as np
 
+
+# TODO: csinalj egy strategy-t ami evoluciosan tanit egy ann-t
 class NaiveHunterStrategy:
     def __init__(self, **kwargs):
         self.nextAction = "0"
@@ -50,6 +52,7 @@ class NaiveHunterStrategy:
                     vals.append(0)
 
         values = np.array(vals)
+        print(values.max())
         #print(values, jsonData["vision"][np.argmax(values)]["relative_coord"], values.max())
         if np.max(values) <= 0 or self.oldcounter>=3:
             actstring = self.getRandomAction()
@@ -65,7 +68,7 @@ class NaiveHunterStrategy:
                 elif jsonData["vision"][idx]["relative_coord"][i] < 0:
                     actstring += "-"
 
-        sendData(json.dumps({"command":"SetAction","name":"Balazs","payload":actstring}))
+        sendData(json.dumps({"command":"SetAction","name":"Nata","payload":actstring}))
 
 
 hunter = NaiveHunterStrategy()
@@ -73,4 +76,4 @@ hunter = NaiveHunterStrategy()
 
 client = SocketClient("46.107.162.203",25660, hunter.processObservation)
 client.start()
-client.sendData(json.dumps({"command": "SetName", "name": "Balazs", "payload": None}))
+client.sendData(json.dumps({"command": "SetName", "name": "Nata", "payload": None}))

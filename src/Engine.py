@@ -19,6 +19,10 @@ class AdaptIOEngine:
         elif r == 3:
             return pos + np.array([-1, 0])
 
+    #TODO: Generate from config fgv
+    #TODO: Logging megoldasa, directory alapon
+    #TODO: Mit csinalunk game endnel? Mikor legyen vege? Kuldunk-e leaderboard-ot?
+
     def __init__(self, mapPath, startingSize, minRatio, strategyDict, visionRange, updateMode, **kwargs):
         self.mapPath = mapPath
         self.field, self.size = self.prepareField(self.mapPath)
@@ -37,6 +41,7 @@ class AdaptIOEngine:
             Player(list(strategyDict.keys())[ids[i]], list(strategyDict.values())[ids[i]], self.startingSize, **kwargs) for i in
             range(4)]
 
+        #TODO: ez is mehetne configba
         diffFromSide = 1
         self.players[0].pos = np.array([0 + diffFromSide, 0 + diffFromSide])
         self.players[1].pos = np.array([self.size - diffFromSide - 1, 0 + diffFromSide])
@@ -57,9 +62,6 @@ class AdaptIOEngine:
         field = np.transpose(np.loadtxt(mapPath))
         size = field.shape[0]
         return field, size
-        # ertekek self.field-be, initben setelje valahogy, ugy hogy 0-4 kaja ertek, -1 fal
-        # assertelni lehetne, hogy a size jo, vagy lehet helyette path/mapstring beadas is
-        # self.size is legyen megfelelo
 
     def checkBound(self, pos):
         if not 0 <= pos[0] < self.size or not 0 <= pos[1] < self.size:
@@ -141,13 +143,17 @@ class AdaptIOEngine:
     def surveyArea(self, player):
         pos = player.pos
         observation = {"pos": pos.tolist(), "tick": self.ticknum, "active":player.active, "size":player.size, "vision": []}
-        playerpos = [tuple(player.pos) for player in self.players if player.active]
+        playerpos = [tuple(player.pos) for player in self.players]
         for diffcoord in self.visibilityMask:
             vispos = pos + np.array(diffcoord)
             if tuple(vispos) in playerpos:
-                playerDict = {}
-                playerDict["size"] = self.players[playerpos.index(tuple(vispos))].size
-                playerDict["name"] = self.players[playerpos.index(tuple(vispos))].name
+                playerIdx = playerpos.index(tuple(vispos))
+                if self.players[playerIdx].active:
+                    playerDict = {}
+                    playerDict["size"] = self.players[playerpos.index(tuple(vispos))].size
+                    playerDict["name"] = self.players[playerpos.index(tuple(vispos))].name
+                else:
+                    playerDict = None
             else:
                 playerDict = None
 
@@ -167,6 +173,7 @@ class AdaptIOEngine:
                 self.players[i].size += self.field[newpos[i][0], newpos[i][1]]
                 self.field[newpos[i][0], newpos[i][1]] = 0
 
+    #TODO: statistical updateMode hozzaadasa, esetleg map? self.field frissitese
     def updateFood(self):
         if self.updateMode == "static":
             return
