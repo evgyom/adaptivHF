@@ -170,7 +170,6 @@ class AdaptIOEngine:
                 self.players[i].size += self.field[newpos[i][0], newpos[i][1]]
                 self.field[newpos[i][0], newpos[i][1]] = 0
 
-    #TODO: statistical updateMode hozzaadasa, esetleg map? self.field frissitese
     def updateFood(self):
         if self.updateMode == "static":
             return
