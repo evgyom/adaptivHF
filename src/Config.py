@@ -1,6 +1,6 @@
 # Engine
 MAPPATH          = "./maps/02_base.txt"
-FIELDUPDATE_PATH = "./fieldupdate/02_cross.txt"
+FIELDUPDATE_PATH = "./fieldupdate/01_corner.txt"
 STARTING_SIZE    = 5
 MIN_RATIO        = 1.1
 STRATEGY_DICT    = {"Teszt1": "naivehunterbot", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
