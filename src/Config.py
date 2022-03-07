@@ -1,11 +1,12 @@
 # Engine
-MAPPATH        = "./maps/02_base.txt"
-STARTING_SIZE  = 5
-MIN_RATIO      = 1.1
-STRATEGY_DICT  = {"Teszt1": "naivehunterbot", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
-VISION_RANGE   = 5
-UPDATE_MODE    = "static"
-DIFF_FROM_SIDE = 1
+MAPPATH          = "./maps/02_base.txt"
+FIELDUPDATE_PATH = "./fieldupdate/02_cross.txt"
+STARTING_SIZE    = 5
+MIN_RATIO        = 1.1
+STRATEGY_DICT    = {"Teszt1": "naivehunterbot", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
+VISION_RANGE     = 5
+UPDATE_MODE      = "static"
+DIFF_FROM_SIDE   = 1
 
 #GUI
 WINDOW_HEIGHT = 800
