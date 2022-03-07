@@ -33,7 +33,7 @@ def gui():
     # Player list
     players = [Player_1, Player_2, Player_3, Player_4]
     # Map load
-    str_map = 'maps/02_base.txt'
+    str_map = MAPPATH
     map = np.transpose(np.loadtxt(str_map))
     # Tick
     tick = 6
@@ -56,8 +56,6 @@ class AdaptIO():
 
         self.run = True
         self.updated = True
-        #self.map_original = np.zeros([BLOCK_NUM, BLOCK_NUM])
-        #self.map_actual   = np.zeros([BLOCK_NUM, BLOCK_NUM])
         self.SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.CLOCK = pygame.time.Clock()
         pygame.display.set_caption("AdaptIO")
