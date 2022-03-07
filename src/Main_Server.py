@@ -10,7 +10,7 @@ serv.start()
 
 time.sleep(5)
 
-engine = AdaptIOEngine("./maps/base_field.txt", 5, 1.1,
+engine = AdaptIOEngine("./maps/02_base.txt", 5, 1.1,
                        {"Balazs": "randombot", "Nata": "randombot", "Teszt3": "randombot", "Teszt4": "randombot"}, 5,
                        "static",sender=serv.sendData, getter=serv.getLatestForName)
 

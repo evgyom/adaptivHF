@@ -2,9 +2,7 @@ from matplotlib import animation
 import matplotlib.pyplot as plt
 from Engine import *
 
-engine = AdaptIOEngine("./maps/base_field.txt", 5, 1.1,
-                       {"Teszt1": "naivehunterbot", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}, 5,
-                       "static")
+engine = AdaptIOEngine()
 
 fig = plt.figure(figsize=(8,8))
 ax = plt.axes()

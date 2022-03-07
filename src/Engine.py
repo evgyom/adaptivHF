@@ -2,7 +2,7 @@ import numpy as np
 from collections import Counter
 import random
 from Player import *
-
+from Config import *
 
 class AdaptIOEngine:
     neighbourDifferencies = {0: np.array([0, 1]), 1: np.array([0, -1]), 2: np.array([1, 0]), 3: np.array([-1, 0])}
@@ -23,31 +23,30 @@ class AdaptIOEngine:
     #TODO: Logging megoldasa, directory alapon
     #TODO: Mit csinalunk game endnel? Mikor legyen vege? Kuldunk-e leaderboard-ot?
 
-    def __init__(self, mapPath, startingSize, minRatio, strategyDict, visionRange, updateMode, **kwargs):
-        self.mapPath = mapPath
+    def __init__(self, **kwargs):
+        self.mapPath = MAPPATH
         self.field, self.size = self.prepareField(self.mapPath)
         self.startField = self.field
-        self.startingSize = startingSize
-        self.minRatio = minRatio
-        self.visionRange = visionRange
-        self.updateMode = updateMode
+        self.startingSize = STARTING_SIZE
+        self.minRatio = MIN_RATIO
+        self.visionRange = VISION_RANGE
+        self.updateMode = UPDATE_MODE
         self.visibilityMask = self.genVisibilityMask()
         self.ticknum = 0
+        self.strategyDict = STRATEGY_DICT
 
         ids = list(range(4))
         random.shuffle(ids)
 
         self.players = [
-            Player(list(strategyDict.keys())[ids[i]], list(strategyDict.values())[ids[i]], self.startingSize, **kwargs) for i in
+            Player(list(self.strategyDict.keys())[ids[i]], list(self.strategyDict.values())[ids[i]], self.startingSize, **kwargs) for i in
             range(4)]
 
-        #TODO: ez is mehetne configba
-        diffFromSide = 1
+        diffFromSide = DIFF_FROM_SIDE
         self.players[0].pos = np.array([0 + diffFromSide, 0 + diffFromSide])
         self.players[1].pos = np.array([self.size - diffFromSide - 1, 0 + diffFromSide])
         self.players[2].pos = np.array([0 + diffFromSide, self.size - diffFromSide - 1])
         self.players[3].pos = np.array([self.size - diffFromSide - 1, self.size - diffFromSide - 1])
-        # print([player.pos for player in self.players])
 
     def genVisibilityMask(self):
         coordlist = []
@@ -120,16 +119,13 @@ class AdaptIOEngine:
 
         colliding = []
         for i in range(len(positions)):
-            # print(i)
             if tuple(positions[i]) == tuple(valueToHandle):
                 colliding.append(i)
 
         sizes = np.array([self.players[i].size for i in colliding])
         idx = np.argsort(sizes)[::-1]
-        # print(sizes, idx)
         if sizes[idx[0]] >= sizes[idx[1]] * self.minRatio:
             newsize = np.sum(sizes)
-            # print(newsize)
             self.players[colliding[idx[0]]].size = newsize
             colliding.remove(colliding[idx[0]])
             for dead in colliding:

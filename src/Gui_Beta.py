@@ -1,46 +1,12 @@
 import time
-
 import numpy as np
 import pygame
 from threading import Thread
 from Player import Player
-
-# Size (800 x 800 pixel map = 40 x 40 grid
-WINDOW_HEIGHT = 800
-WINDOW_WIDTH = 1000
-BLOCK_NUM    = 40
-BLOCK_SIZE   = 20
-FPS          = 40
-
-# Colors
-GRID_COLOR     = (60, 60, 60)
-BACK_COLOR     = (100, 100, 100)
-BOARD_COLOR    = (40, 40, 40)
-TEXT_COLOR     = (180, 180, 180)
-PLAYER_1_COLOR = (100, 51, 0)
-PLAYER_2_COLOR = (204, 0, 153)
-PLAYER_3_COLOR = (0, 0, 255)
-PLAYER_4_COLOR = (255, 255, 0)
-LOW_COLOR      = (102, 200, 153)
-MID_COLOR      = (0, 200, 0)
-HIGH_COLOR     = (0, 80, 0)
-WALL_COLOR     = (0, 0, 0)
-
-# Number representations in the Game
-COOLDOWN = -1 # Any negative number
-EMPTY    =  0
-LOW      =  1
-MID      =  2
-HIGH     =  3
-PLAYER_1 =  4
-PLAYER_2 =  5
-PLAYER_3 =  6
-PLAYER_4 =  7
-WALL     =  9
+from Config import *
 
 # Convert Numbers to Colors
 numTOcolor = {
-    COOLDOWN: BACK_COLOR,
     EMPTY:    BACK_COLOR,
     LOW:      LOW_COLOR,
     MID:      MID_COLOR,
@@ -51,8 +17,6 @@ numTOcolor = {
     PLAYER_4: PLAYER_4_COLOR,
     WALL:     WALL_COLOR,
 }
-
-#  parameter aminek függvenyt lehet megadni, amit meghalv ha X-et nyomunk,
 
 def gui():
     # Teszt data
@@ -69,7 +33,7 @@ def gui():
     # Player list
     players = [Player_1, Player_2, Player_3, Player_4]
     # Map load
-    str_map = 'maps/base_field.txt'
+    str_map = 'maps/02_base.txt'
     map = np.transpose(np.loadtxt(str_map))
     # Tick
     tick = 6
