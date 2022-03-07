@@ -175,9 +175,10 @@ class AdaptIOEngine:
         if self.updateMode == "static":
             return
         elif self.updateMode == "statistical":
-            random_food = np.random.rand(self.field.shape[0], self.field.shape[1])
-            new_food = (self.field < 3) & (self.foodgen_map/FOODGEN_COOLDOWN > random_food)
-            self.field = self.field + new_food
+            if self.ticknum % FOODGEN_COOLDOWN == FOODGEN_OFFSET:
+                random_food = np.random.rand(self.field.shape[0], self.field.shape[1])
+                new_food = (self.field < 3) & (self.foodgen_map > random_food)
+                self.field = self.field + new_food
         else:
             pass
 

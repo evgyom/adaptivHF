@@ -7,7 +7,8 @@ STRATEGY_DICT    = {"Teszt1": "naivehunterbot", "Teszt2": "naivehunterbot", "Tes
 VISION_RANGE     = 5
 UPDATE_MODE      = "statistical" #static
 DIFF_FROM_SIDE   = 1
-FOODGEN_COOLDOWN = 200
+FOODGEN_COOLDOWN = 100
+FOODGEN_OFFSET   = 10
 
 #GUI
 WINDOW_HEIGHT = 800
