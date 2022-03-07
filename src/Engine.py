@@ -19,13 +19,14 @@ class AdaptIOEngine:
         elif r == 3:
             return pos + np.array([-1, 0])
 
-    #TODO: Generate from config fgv
     #TODO: Logging megoldasa, directory alapon
     #TODO: Mit csinalunk game endnel? Mikor legyen vege? Kuldunk-e leaderboard-ot?
 
     def __init__(self, **kwargs):
         self.mapPath = MAPPATH
+        self.fieldupdate_path = FIELDUPDATE_PATH
         self.field, self.size = self.prepareField(self.mapPath)
+        self.foodgen_map, _ = self.prepareField(self.fieldupdate_path)
         self.startField = self.field
         self.startingSize = STARTING_SIZE
         self.minRatio = MIN_RATIO
@@ -173,6 +174,10 @@ class AdaptIOEngine:
     def updateFood(self):
         if self.updateMode == "static":
             return
+        elif self.updateMode == "statistical":
+            random_food = np.random.rand(self.field.shape[0], self.field.shape[1])
+            new_food = (self.field < 3) & (self.foodgen_map > random_food)
+            self.field = self.field + new_food
         else:
             pass
 

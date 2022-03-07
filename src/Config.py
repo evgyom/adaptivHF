@@ -5,7 +5,7 @@ STARTING_SIZE    = 5
 MIN_RATIO        = 1.1
 STRATEGY_DICT    = {"Teszt1": "naivehunterbot", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
 VISION_RANGE     = 5
-UPDATE_MODE      = "static"
+UPDATE_MODE      = "statistical" #static
 DIFF_FROM_SIDE   = 1
 
 #GUI
