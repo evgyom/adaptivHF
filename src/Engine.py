@@ -176,7 +176,7 @@ class AdaptIOEngine:
             return
         elif self.updateMode == "statistical":
             random_food = np.random.rand(self.field.shape[0], self.field.shape[1])
-            new_food = (self.field < 3) & (self.foodgen_map > random_food)
+            new_food = (self.field < 3) & (self.foodgen_map/FOODGEN_COOLDOWN > random_food)
             self.field = self.field + new_food
         else:
             pass
