@@ -41,13 +41,14 @@ class GameMaster:
 
     def _startGame(self):
         self.gameState = STATE.RUNNING
+        #TODO: first vision
 
     def _processTick(self):
         if self.gameState == STATE.PRERUN:
             if self.autoStartTimer is None:
                 self.autoStartTimer = Timer(30, self._startGame)
             if not self.serv.checkMissingPlayers():
-                self.gameState = STATE.RUNNING
+                self._startGame()
 
         elif self.gameState == STATE.RUNNING:
             if self.autoStartTimer is not None:
@@ -100,6 +101,7 @@ class GameMaster:
         try:
             while self.pollGameCommands:
                 if DISPLAY_ON:
+                    #TODO: Ezt csomagold be egy függvénybe
                     if self.disp.run:
                         for event in pygame.event.get():
                             if event.type == pygame.QUIT:
