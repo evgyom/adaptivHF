@@ -12,6 +12,10 @@ def actionHandler(name, payload, server):
     if name in server.playerNames:
         server.queues[name].put(payload)
 
+def gameControlHandler(name, payload, server):
+    if name==server.masterName:
+        server.queues[name].put(payload)
+
 
 class MultiSocketServer:
     def __init__(self, ip, port, masterName, playerNames):
@@ -25,6 +29,7 @@ class MultiSocketServer:
 
         self.eventHandlers = {}
         self.eventHandlers["SetAction"] = actionHandler
+        self.eventHandlers["GameControl"] = gameControlHandler
 
         self.queues = {}
         for name in self.playerNames + [self.masterName, ]:
@@ -80,6 +85,10 @@ class MultiSocketServer:
                 while not self.queues[name].empty():
                     action = self.queues[name].get()
                 return action
+
+    def getGameMasterFIFO(self):
+        return self.queues[self.masterName].get()
+
 
     def accept_wrapper(self, sock):
         conn, addr = sock.accept()  # Should be ready to read

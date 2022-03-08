@@ -49,13 +49,16 @@ class SocketClient:
     def service_connection(self, key, mask):
         sock = key.fileobj
         if mask & selectors.EVENT_READ:
-            size = struct.unpack("i", sock.recv(struct.calcsize("i")))[0]
             recv_data = ""
-            while len(recv_data) < size:
-                msg = sock.recv(size - len(recv_data))
-                if not msg:
-                    break
-                recv_data += msg.decode('utf-8')
+            try:
+                size = struct.unpack("i", sock.recv(struct.calcsize("i")))[0]
+                while len(recv_data) < size:
+                    msg = sock.recv(size - len(recv_data))
+                    if not msg:
+                        break
+                    recv_data += msg.decode('utf-8')
+            except:
+                pass
             if recv_data != "":
                 jsondata = None
                 try:

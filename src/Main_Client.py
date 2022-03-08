@@ -1,3 +1,5 @@
+import time
+
 from Client import SocketClient
 import json
 import numpy as np
@@ -74,6 +76,7 @@ class NaiveHunterStrategy:
 hunter = NaiveHunterStrategy()
 
 
-client = SocketClient("46.107.162.203",25660, hunter.processObservation)
+client = SocketClient("localhost",42069, hunter.processObservation)
 client.start()
-client.sendData(json.dumps({"command": "SetName", "name": "Nata", "payload": None}))
+time.sleep(3)
+client.sendData(json.dumps({"command": "GameControl", "name": "master", "payload": {"type":"interrupt", "data":None}}))

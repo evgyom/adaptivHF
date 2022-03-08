@@ -19,11 +19,13 @@ class RepeatTimer(Timer):
 class GameMaster:
     def __init__(self):
         self.serv = MultiSocketServer(IP,PORT,GAMEMASTER_NAME,list(STRATEGY_DICT.keys()))
+        self.serv.start()
         self.engine = AdaptIOEngine(sender=self.serv.sendData, getter=self.serv.getLatestForName)
         self.tickLength = DEFAULT_TICK_LENGTH_S
         self.timer = RepeatTimer(self.tickLength,self.processTick)
         self.running = False
         self.gameState = STATE.RUNNING
+        self.pollGameCommands = True
 
     def processTick(self):
         if self.gameState == STATE.PRERUN:
@@ -54,13 +56,18 @@ class GameMaster:
         self.timer.cancel()
         self.serv.stop()
         self.timer.join()
+        self.pollGameCommands = False
 
     def run(self):
         self.timer.start()
         self.running = True
         try:
-            while True:
-                pass
+            while self.pollGameCommands:
+                action = self.serv.getGameMasterFIFO()
+                if not("type" in action.keys() and "data" in action.keys()):
+                    continue
+                if action["type"] == "interrupt":
+                    self.close()
         except KeyboardInterrupt:
             print("Interrupted, stopping")
             self.close()
