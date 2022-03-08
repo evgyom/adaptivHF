@@ -3,7 +3,7 @@ import socket
 import selectors
 import types
 from threading import Thread
-from queue import Queue
+from queue import Queue, Empty
 import json
 import struct
 
@@ -24,6 +24,7 @@ class MultiSocketServer:
         self.t = None
         self.masterName = masterName
         self.playerNames = playerNames
+        self.missingPlayers = playerNames.copy()
 
         self.sendQueues = {}
 
@@ -87,8 +88,16 @@ class MultiSocketServer:
                 return action
 
     def getGameMasterFIFO(self):
-        return self.queues[self.masterName].get()
+        try:
+            return self.queues[self.masterName].get(timeout=3)
+        except Empty:
+            return None
 
+    def checkMissingPlayers(self):
+        if len(self.missingPlayers)>0:
+            return True
+        else:
+            return False
 
     def accept_wrapper(self, sock):
         conn, addr = sock.accept()  # Should be ready to read
@@ -119,6 +128,9 @@ class MultiSocketServer:
 
                 if command == "SetName" and name is not None and name != "all":
                     data.name = name
+                    if name in self.missingPlayers:
+                        self.missingPlayers.remove(name)
+
             else:
                 # print(f"Closing connection to {data.addr}")
                 self.sel.unregister(sock)

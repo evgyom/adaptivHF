@@ -26,19 +26,40 @@ class GameMaster:
         self.running = False
         self.gameState = STATE.RUNNING
         self.pollGameCommands = True
+        self.exitTimer = None
+        self.gameStartTimer = None
+        self.autoStartTimer = None
+        self.canStart = False
+
+    def _startGame(self):
+        self.gameState = STATE.RUNNING
 
     def processTick(self):
         if self.gameState == STATE.PRERUN:
-            pass
+            if self.autoStartTimer is None:
+                self.autoStartTimer = Timer(30, self._startGame)
+            if not self.serv.checkMissingPlayers():
+                self.gameState = STATE.RUNNING
+
         elif self.gameState == STATE.RUNNING:
+            self.autoStartTimer = None
             if not self.engine.tick():
                 self.gameState = STATE.WAIT_COMMAND
             else:
                 print(self.engine.ticknum)
+
         elif self.gameState == STATE.WAIT_COMMAND:
+            if self.exitTimer is None:
+                self.exitTimer = Timer(30, self.close)
+                self.exitTimer.start()
             pass
+
         elif self.gameState == STATE.WAIT_START:
-            pass
+            if self.canStart:
+                self.serv.sendData("Starting","all")
+                self.gameState = STATE.RUNNING
+                self.canStart = False
+
         else:
             pass
 
@@ -54,9 +75,12 @@ class GameMaster:
 
     def close(self):
         self.timer.cancel()
-        self.serv.stop()
         self.timer.join()
         self.pollGameCommands = False
+        self.serv.stop()
+        if self.exitTimer is not None:
+            self.exitTimer.cancel()
+        print("Close finished")
 
     def run(self):
         self.timer.start()
@@ -64,15 +88,20 @@ class GameMaster:
         try:
             while self.pollGameCommands:
                 action = self.serv.getGameMasterFIFO()
+                if action is None:
+                    continue
                 if not("type" in action.keys() and "data" in action.keys()):
                     continue
                 if action["type"] == "interrupt":
                     self.close()
+                if action["type"] == "start":
+                    self.canStart = True
+                if action["type"] == "reset":
+                    self.canStart = False
+                    self.engine.reset_state(action["data"]["mapPath"],action["data"]["updateMapPath"])
         except KeyboardInterrupt:
             print("Interrupted, stopping")
             self.close()
-
-
 
 
 if __name__ == "__main__":
