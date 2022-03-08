@@ -89,7 +89,7 @@ class MultiSocketServer:
 
     def getGameMasterFIFO(self):
         try:
-            return self.queues[self.masterName].get(timeout=3)
+            return self.queues[self.masterName].get(timeout=0.03)
         except Empty:
             return None
 

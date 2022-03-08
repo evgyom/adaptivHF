@@ -54,8 +54,6 @@ class NaiveHunterStrategy:
                     vals.append(0)
 
         values = np.array(vals)
-        print(values.max())
-        #print(values, jsonData["vision"][np.argmax(values)]["relative_coord"], values.max())
         if np.max(values) <= 0 or self.oldcounter>=3:
             actstring = self.getRandomAction()
             self.oldcounter = 0
@@ -78,5 +76,6 @@ hunter = NaiveHunterStrategy()
 
 client = SocketClient("localhost",42069, hunter.processObservation)
 client.start()
-time.sleep(3)
-client.sendData(json.dumps({"command": "GameControl", "name": "master", "payload": {"type":"interrupt", "data":None}}))
+time.sleep(0.1)
+client.sendData(json.dumps({"command": "SetName", "name": "Nata", "payload": {"type":"reset", "data":{"mapPath":None, "updateMapPath":None}}}))
+#client.sendData(json.dumps({"command": "GameControl", "name": "master", "payload": {"type":"reset", "data":{"mapPath":None, "updateMapPath":None}}}))

@@ -3,6 +3,7 @@ GAMEMASTER_NAME = "master"
 IP = "localhost"
 PORT = 42069
 DEFAULT_TICK_LENGTH_S = 0.3
+DISPLAY_ON = True
 
 
 
@@ -11,13 +12,14 @@ MAPPATH          = "./maps/02_base.txt"
 FIELDUPDATE_PATH = "./fieldupdate/01_corner.txt"
 STARTING_SIZE    = 5
 MIN_RATIO        = 1.1
-STRATEGY_DICT    = {"Teszt1": "naivehunterbot", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
+STRATEGY_DICT    = {"Nata": "remoteplayer", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
 VISION_RANGE     = 5
 UPDATE_MODE      = "statistical" #static
 DIFF_FROM_SIDE   = 1
-FOODGEN_COOLDOWN = 100
+FOODGEN_COOLDOWN = 10
 FOODGEN_OFFSET   = 10
-MAXTICKS = 10
+FOODGEN_SCALER = 0.3
+MAXTICKS = 100
 SOLO_ENABLED = True
 
 

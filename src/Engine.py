@@ -179,9 +179,9 @@ class AdaptIOEngine:
         if self.updateMode == "static":
             return
         elif self.updateMode == "statistical":
-            if self.ticknum % FOODGEN_COOLDOWN == FOODGEN_OFFSET:
+            if (self.ticknum-FOODGEN_OFFSET) % FOODGEN_COOLDOWN == 0 and self.ticknum-FOODGEN_OFFSET>=0:
                 random_food = np.random.rand(self.field.shape[0], self.field.shape[1])
-                new_food = (self.field < 3) & (self.foodgen_map > random_food)
+                new_food = (self.field < 3) & (self.foodgen_map*FOODGEN_SCALER > random_food)
                 self.field = self.field + new_food
         else:
             pass
@@ -203,6 +203,7 @@ class AdaptIOEngine:
         return newpos
 
     def reset_state(self, mapPath=None, updateMapPath=None):
+        self.ticknum = 0
         if mapPath is None:
             self.field = self.field_old.copy()
         else:
@@ -240,6 +241,8 @@ class AdaptIOEngine:
         if alive == 0:
             return True
 
+    def generateDisplayData(self):
+        return self.ticknum, self.players.copy(), self.field.copy()
 
     def tick(self):
         if self.check_conditions():
@@ -262,6 +265,8 @@ class AdaptIOEngine:
 
         for i in range(len(self.players)):
             self.players[i].strategy.setObservations(self.players[i], self.surveyArea(self.players[i]))
+
+        #TODO: itt logolj, actions használható, self.field, meg self.players[i].size
 
         self.ticknum += 1
         return True

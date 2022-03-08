@@ -18,42 +18,28 @@ numTOcolor = {
     WALL:     WALL_COLOR,
 }
 
-def gui():
+def gui(displayObj):
     # Teszt data
     # ====================================================
     # Players
-    Player_1 = Player('BOB', 'naivebot', 1)
-    Player_1.pos = (1,1)
-    Player_2 = Player('ROB', 'naivebot', 1)
-    Player_2.pos = (38, 1)
-    Player_3 = Player('ZOD', 'naivebot', 1)
-    Player_3.pos = (38, 38)
-    Player_4 = Player('POO', 'naivebot', 1)
-    Player_4.pos = (1, 38)
-    # Player list
-    players = [Player_1, Player_2, Player_3, Player_4]
-    # Map load
-    str_map = MAPPATH
-    map = np.transpose(np.loadtxt(str_map))
-    # Tick
-    tick = 6
+
     # ====================================================
 
-    # Init game Class
-    adaptIO = AdaptIO()                            # init gui
-    adaptIO.updateDisplayInfo(tick, players, map)  # update gui
-    adaptIO.launch()                               # running loop
+    # Init game Class                            # init gui
+    displayObj.launch()                               # running loop
 
-class AdaptIO():
+class AdaptIODisplay():
     """
     Contains the essential game gui elements.
     """
-    def __init__(self):
+    def __init__(self, closeFunction):
         """
         Initialize AdaptIO class.
         """
         pygame.init()
+        self.closeFunction = closeFunction
 
+        self.load_dummy()
         self.run = True
         self.updated = True
         self.SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -64,9 +50,9 @@ class AdaptIO():
         # Draw static display elements
         self.drawGrid()
 
-        self.tick = 0
-        self.players = []
-        self.map = []
+        #self.tick = 0
+        #self.players = []
+        #self.map = []
 
         print('AdaptIO is started!')
 
@@ -76,6 +62,22 @@ class AdaptIO():
         self.map = map
         self.players = players
 
+    def load_dummy(self):
+        Player_1 = Player('BOB', 'naivebot', 1)
+        Player_1.pos = (1, 1)
+        Player_2 = Player('ROB', 'naivebot', 1)
+        Player_2.pos = (38, 1)
+        Player_3 = Player('ZOD', 'naivebot', 1)
+        Player_3.pos = (38, 38)
+        Player_4 = Player('POO', 'naivebot', 1)
+        Player_4.pos = (1, 38)
+        # Player list
+        self.players = [Player_1, Player_2, Player_3, Player_4]
+
+        self.map = np.zeros((40,40),dtype=np.int32)
+        # Tick
+        self.tick = 0
+
     def updateDisplay(self):
         self.updateTick()
         self.updateMap()
@@ -84,14 +86,16 @@ class AdaptIO():
 
     def launch(self):
         while self.run:
+            print(time.time())
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.run = False
+                    self.closeFunction()
                     print('AdaptIO is closed!')
             if self.updated:
                 self.updateDisplay()
                 self.updated = False
-            pygame.display.update()
+            pygame.display.flip()
             self.CLOCK.tick(FPS)
         pygame.quit()
 
@@ -117,6 +121,7 @@ class AdaptIO():
         for x in range(0, BLOCK_NUM):
             for y in range(0, BLOCK_NUM):
                 rect = pygame.Rect(x * BLOCK_SIZE + 2, y * BLOCK_SIZE + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4)
+                #print(self.map)
                 pygame.draw.rect(self.SCREEN, numTOcolor[self.map[x,y]], rect, 0)
 
     def spanPlayers(self):
@@ -140,7 +145,7 @@ class AdaptIO():
             x = self.players[i].pos[0]
             y = self.players[i].pos[1]
             rect = pygame.Rect(x * BLOCK_SIZE + 2, y * BLOCK_SIZE + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4)
-            pygame.draw.rect(self.SCREEN, numTOcolor[i+3], rect, 0)
+            pygame.draw.rect(self.SCREEN, numTOcolor[i+4], rect, 0)
 
     def drawGrid(self):
         """
@@ -193,7 +198,7 @@ class AdaptIO():
         rect = pygame.Rect(x + 2, y + 2, width, height)
         pygame.draw.rect(self.SCREEN, BOARD_COLOR, rect, 0)
         flag = pygame.Rect(x+8, y+8, 20 , height - 12)
-        pygame.draw.rect(self.SCREEN, numTOcolor[player_id+3], flag, 0)
+        pygame.draw.rect(self.SCREEN, numTOcolor[player_id+4], flag, 0)
 
         font = pygame.font.SysFont(None, 30)
         sttr = 'Player ' + str(player_id)
@@ -211,7 +216,9 @@ class AdaptIO():
 
 # Run the GUI.
 if __name__ == '__main__':
-    t = Thread(target=gui)
+    adaptIO = AdaptIODisplay()
+    t = Thread(target=gui,args=(adaptIO,))
     t.start()
     time.sleep(10)
+    adaptIO.kill()
     t.join()
