@@ -102,7 +102,7 @@ class AdaptIODisplay():
     def kill(self):
         self.run = False
         print('AdaptIO is closed!')
-        pygame.quit()
+        #pygame.quit()
 
     '''
     def loadMap(self, str_map):

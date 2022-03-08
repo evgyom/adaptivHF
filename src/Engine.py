@@ -141,6 +141,13 @@ class AdaptIOEngine:
                 newpos[i] = oldPositions[i].copy()
         return newpos
 
+    def getLeaderboard(self):
+        playerData = []
+        for player in self.players:
+            playerData.append({"name":player.name,"active":player.active,"maxSize":player.size})
+
+        return {"ticks":self.ticknum, "players":playerData}
+
     def surveyArea(self, player):
         pos = player.pos
         observation = {"pos": pos.tolist(), "tick": self.ticknum, "active": player.active, "size": player.size,
@@ -244,6 +251,10 @@ class AdaptIOEngine:
     def generateDisplayData(self):
         return self.ticknum, self.players.copy(), self.field.copy()
 
+    def sendObservations(self):
+        for i in range(len(self.players)):
+            self.players[i].strategy.setObservations(self.players[i], self.surveyArea(self.players[i]))
+
     def tick(self):
         if self.check_conditions():
             return False
@@ -263,8 +274,7 @@ class AdaptIOEngine:
 
         self.updateFood()
 
-        for i in range(len(self.players)):
-            self.players[i].strategy.setObservations(self.players[i], self.surveyArea(self.players[i]))
+        self.sendObservations()
 
         #TODO: itt logolj, actions használható, self.field, meg self.players[i].size
 

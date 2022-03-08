@@ -1,3 +1,5 @@
+import json
+
 from Config import *
 from Engine import AdaptIOEngine
 from Server import MultiSocketServer
@@ -27,12 +29,13 @@ class GameMaster:
         for n,s in STRATEGY_DICT.items():
             if s=="remoteplayer":
                 playerNames.append(n)
+        print("Players: ",playerNames)
         self.serv = MultiSocketServer(IP, PORT, GAMEMASTER_NAME, playerNames)
         self.engine = AdaptIOEngine(sender=self.serv.sendData, getter=self.serv.getLatestForName)
         self.tickLength = DEFAULT_TICK_LENGTH_S
         self.timer = RepeatTimer(self.tickLength, self._processTick)
         self.running = False
-        self.gameState = STATE.RUNNING
+        self.gameState = STATE.PRERUN
         self.pollGameCommands = True
         self.exitTimer = None
         self.gameStartTimer = None
@@ -41,20 +44,25 @@ class GameMaster:
 
     def _startGame(self):
         self.gameState = STATE.RUNNING
-        #TODO: first vision
+        self.serv.sendData(json.dumps({"type": "started", "payload": {"tickLength": self.tickLength}}), "all")
+        self.engine.sendObservations()
+
 
     def _processTick(self):
         if self.gameState == STATE.PRERUN:
             if self.autoStartTimer is None:
                 self.autoStartTimer = Timer(30, self._startGame)
+                self.autoStartTimer.start()
             if not self.serv.checkMissingPlayers():
                 self._startGame()
 
         elif self.gameState == STATE.RUNNING:
             if self.autoStartTimer is not None:
+                self.autoStartTimer.cancel()
                 self.autoStartTimer = None
             if not self.engine.tick():
                 self.gameState = STATE.WAIT_COMMAND
+                self.serv.sendData(json.dumps({"type":"leaderBoard","payload":self.engine.getLeaderboard()}),"all")
             else:
                 if DISPLAY_ON:
                     self.disp.updateDisplayInfo(*self.engine.generateDisplayData())
@@ -65,15 +73,19 @@ class GameMaster:
                 self.exitTimer.start()
 
         elif self.gameState == STATE.WAIT_START:
+            if self.exitTimer is not None:
+                self.exitTimer.cancel()
+                self.exitTimer = None
+
             if self.canStart:
-                self.serv.sendData("Starting", "all")
                 self.gameState = STATE.RUNNING
                 self.canStart = False
 
         else:
             pass
 
-    def changeTickLength(self, newInterval):
+    def __changeTickLength(self, newInterval):
+        # self.running currently not updated properly. Do NOT use without a revision!
         if self.running:
             self.timer.cancel()
             self.tickLength = newInterval
@@ -90,6 +102,8 @@ class GameMaster:
         self.serv.stop()
         if self.exitTimer is not None:
             self.exitTimer.cancel()
+        if self.autoStartTimer is not None:
+            self.autoStartTimer.cancel()
         if DISPLAY_ON:
             self.disp.kill()
         print("Close finished")
@@ -101,7 +115,7 @@ class GameMaster:
         try:
             while self.pollGameCommands:
                 if DISPLAY_ON:
-                    #TODO: Ezt csomagold be egy függvénybe
+                    #TODO: Ezt csomagold be egy fuggvenybe
                     if self.disp.run:
                         for event in pygame.event.get():
                             if event.type == pygame.QUIT:
@@ -112,6 +126,8 @@ class GameMaster:
                             self.disp.updated = False
                         if self.disp.run:
                             pygame.display.update()
+                        else:
+                            pygame.quit()
 
 
                 action = self.serv.getGameMasterFIFO()
@@ -123,10 +139,14 @@ class GameMaster:
                     self.close()
                 if action["type"] == "start":
                     self.canStart = True
+                    self.serv.sendData(json.dumps({"type": "started", "payload": {"tickLength":self.tickLength}}), "all")
+                    self.engine.sendObservations()
                 if action["type"] == "reset":
                     if self.gameState != STATE.RUNNING:
                         self.canStart = False
                         self.engine.reset_state(action["data"]["mapPath"], action["data"]["updateMapPath"])
+                        self.serv.sendData(json.dumps({"type": "readyToStart", "payload": None}), "all")
+                        self.gameState = STATE.WAIT_START
         except KeyboardInterrupt:
             print("Interrupted, stopping")
             self.close()

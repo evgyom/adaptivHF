@@ -14,6 +14,7 @@ def actionHandler(name, payload, server):
 
 def gameControlHandler(name, payload, server):
     if name==server.masterName:
+        #print(payload)
         server.queues[name].put(payload)
 
 
@@ -129,6 +130,7 @@ class MultiSocketServer:
                 if command == "SetName" and name is not None and name != "all":
                     data.name = name
                     if name in self.missingPlayers:
+                        print(name,"connected!")
                         self.missingPlayers.remove(name)
 
             else:

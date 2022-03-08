@@ -66,7 +66,7 @@ class SocketClient:
                 except:
                     pass
                 if jsondata is not None:
-                    if "pos" in jsondata.keys() and "tick" in jsondata.keys() and "active" in jsondata.keys() and "size" in jsondata.keys() and "vision" in jsondata.keys():
+                    if "type" in jsondata.keys() and "payload" in jsondata.keys():
                         self.callback(jsondata, self.sendData)
                 #print(f"Received {recv_data}")
             if not recv_data:

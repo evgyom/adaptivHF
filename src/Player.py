@@ -11,7 +11,7 @@ class RemotePlayerStrategy:
 
     def setObservations(self, ownObject, fieldDict):
         self.nextAction = "0"
-        self.sendData(json.dumps(fieldDict), ownObject.name)
+        self.sendData(json.dumps({"type":"gameData", "payload":fieldDict}), ownObject.name)
 
     def getNextAction(self):
         newaction = self.getData(self.name)
