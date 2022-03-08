@@ -1,3 +1,11 @@
+# GameMaster
+GAMEMASTER_NAME = "master"
+IP = "localhost"
+PORT = 42069
+DEFAULT_TICK_LENGTH_S = 0.3
+
+
+
 # Engine
 MAPPATH          = "./maps/02_base.txt"
 FIELDUPDATE_PATH = "./fieldupdate/01_corner.txt"
@@ -9,6 +17,9 @@ UPDATE_MODE      = "statistical" #static
 DIFF_FROM_SIDE   = 1
 FOODGEN_COOLDOWN = 100
 FOODGEN_OFFSET   = 10
+MAXTICKS = 200
+SOLO_ENABLED = True
+
 
 #GUI
 WINDOW_HEIGHT = 800

@@ -20,6 +20,24 @@ class RemotePlayerStrategy:
         else:
             return newaction
 
+    def reset(self):
+        self.nextAction = "0"
+        data = "something"
+        while data is not None:
+            data = self.getData(self.name)
+
+class DummyStrategy:
+    def __init__(self, **kwargs):
+        self.nextAction = "0"
+
+    def setObservations(self, ownObject, fieldDict):
+        ownObject.active=False
+
+    def getNextAction(self):
+        return "0"
+
+    def reset(self):
+        pass
 
 class RandBotStrategy:
     def __init__(self, **kwargs):
@@ -37,6 +55,8 @@ class RandBotStrategy:
 
         return action
 
+    def reset(self):
+        self.nextAction = "0"
 
 class NaiveStrategy:
     def __init__(self, **kwargs):
@@ -82,6 +102,8 @@ class NaiveStrategy:
     def getNextAction(self):
         return self.nextAction
 
+    def reset(self):
+        self.nextAction = "0"
 
 class NaiveHunterStrategy:
     def __init__(self, **kwargs):
@@ -150,10 +172,12 @@ class NaiveHunterStrategy:
     def getNextAction(self):
         return self.nextAction
 
+    def reset(self):
+        self.nextAction = "0"
 
 class Player:
     strategies = {"randombot": RandBotStrategy, "naivebot": NaiveStrategy, "naivehunterbot": NaiveHunterStrategy,
-                  "remoteplayer": RemotePlayerStrategy}
+                  "remoteplayer": RemotePlayerStrategy, "dummy":DummyStrategy}
 
     def __init__(self, name, playerType, startingSize, **kwargs):
         self.name = name
@@ -167,3 +191,7 @@ class Player:
     def die(self):
         self.active = False
         print(self.name + " died!")
+
+    def reset(self):
+        self.active = True
+

@@ -4,6 +4,7 @@ import random
 from Player import *
 from Config import *
 
+
 class AdaptIOEngine:
     neighbourDifferencies = {0: np.array([0, 1]), 1: np.array([0, -1]), 2: np.array([1, 0]), 3: np.array([-1, 0])}
 
@@ -19,14 +20,16 @@ class AdaptIOEngine:
         elif r == 3:
             return pos + np.array([-1, 0])
 
-    #TODO: Logging megoldasa, directory alapon
-    #TODO: Mit csinalunk game endnel? Mikor legyen vege? Kuldunk-e leaderboard-ot?
+    # TODO: Logging megoldasa, directory alapon
+    # TODO: Mit csinalunk game endnel? Mikor legyen vege? Kuldunk-e leaderboard-ot?
 
     def __init__(self, **kwargs):
         self.mapPath = MAPPATH
         self.fieldupdate_path = FIELDUPDATE_PATH
         self.field, self.size = self.prepareField(self.mapPath)
+        self.field_old = self.field.copy()
         self.foodgen_map, _ = self.prepareField(self.fieldupdate_path)
+        self.foodgen_map_old = self.foodgen_map.copy()
         self.startField = self.field
         self.startingSize = STARTING_SIZE
         self.minRatio = MIN_RATIO
@@ -40,14 +43,15 @@ class AdaptIOEngine:
         random.shuffle(ids)
 
         self.players = [
-            Player(list(self.strategyDict.keys())[ids[i]], list(self.strategyDict.values())[ids[i]], self.startingSize, **kwargs) for i in
+            Player(list(self.strategyDict.keys())[i], list(self.strategyDict.values())[i], self.startingSize, **kwargs)
+            for i in
             range(4)]
 
         diffFromSide = DIFF_FROM_SIDE
-        self.players[0].pos = np.array([0 + diffFromSide, 0 + diffFromSide])
-        self.players[1].pos = np.array([self.size - diffFromSide - 1, 0 + diffFromSide])
-        self.players[2].pos = np.array([0 + diffFromSide, self.size - diffFromSide - 1])
-        self.players[3].pos = np.array([self.size - diffFromSide - 1, self.size - diffFromSide - 1])
+        self.players[ids[0]].pos = np.array([0 + diffFromSide, 0 + diffFromSide])
+        self.players[ids[1]].pos = np.array([self.size - diffFromSide - 1, 0 + diffFromSide])
+        self.players[ids[2]].pos = np.array([0 + diffFromSide, self.size - diffFromSide - 1])
+        self.players[ids[3]].pos = np.array([self.size - diffFromSide - 1, self.size - diffFromSide - 1])
 
     def genVisibilityMask(self):
         coordlist = []
@@ -139,7 +143,8 @@ class AdaptIOEngine:
 
     def surveyArea(self, player):
         pos = player.pos
-        observation = {"pos": pos.tolist(), "tick": self.ticknum, "active":player.active, "size":player.size, "vision": []}
+        observation = {"pos": pos.tolist(), "tick": self.ticknum, "active": player.active, "size": player.size,
+                       "vision": []}
         playerpos = [tuple(player.pos) for player in self.players]
         for diffcoord in self.visibilityMask:
             vispos = pos + np.array(diffcoord)
@@ -192,13 +197,54 @@ class AdaptIOEngine:
             counts = Counter(positions)
             for collisionTile, cnt in counts.items():
                 if cnt > 1 and collisionTile is not None:
-                    # print(positions)
                     newpos = self.handleCollision_oldpos(newpos, oldpos, collisionTile)
                     checked = False
 
         return newpos
 
+    def reset_state(self, mapPath=None, updateMapPath=None):
+        if mapPath is None:
+            self.field = self.field_old.copy()
+        else:
+            self.field, self.size = self.prepareField(mapPath)
+            self.field_old = self.field.copy()
+
+        if updateMapPath is None:
+            self.foodgen_map = self.foodgen_map_old.copy()
+        else:
+            self.foodgen_map, _ = self.prepareField(updateMapPath)
+            self.foodgen_map_old = self.foodgen_map.copy()
+
+        ids = list(range(4))
+        random.shuffle(ids)
+
+        diffFromSide = DIFF_FROM_SIDE
+        self.players[ids[0]].pos = np.array([0 + diffFromSide, 0 + diffFromSide])
+        self.players[ids[1]].pos = np.array([self.size - diffFromSide - 1, 0 + diffFromSide])
+        self.players[ids[2]].pos = np.array([0 + diffFromSide, self.size - diffFromSide - 1])
+        self.players[ids[3]].pos = np.array([self.size - diffFromSide - 1, self.size - diffFromSide - 1])
+
+        for i in range(4):
+            self.players[i].size = STARTING_SIZE
+            self.players[i].reset()
+
+    def check_conditions(self):
+        if self.ticknum >= MAXTICKS > 0:
+            return True
+        alive = 0
+        for i in range(4):
+            if self.players[i].active:
+                alive += 1
+        if not SOLO_ENABLED and alive == 1:
+            return True
+        if alive == 0:
+            return True
+
+
     def tick(self):
+        if self.check_conditions():
+            return False
+
         actions = [player.strategy.getNextAction() for player in self.players]
         pos = [player.pos.copy() for player in self.players]
 
@@ -218,3 +264,4 @@ class AdaptIOEngine:
             self.players[i].strategy.setObservations(self.players[i], self.surveyArea(self.players[i]))
 
         self.ticknum += 1
+        return True
