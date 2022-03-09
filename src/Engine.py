@@ -1,3 +1,4 @@
+
 import numpy as np
 from collections import Counter
 import random
@@ -276,7 +277,7 @@ class AdaptIOEngine:
 
         self.sendObservations()
 
-        #TODO: itt logolj, actions használható, self.field, meg self.players[i].size
+        #TODO: itt logolj, actions hasznï¿½lhatï¿½, self.field, meg self.players[i].size
 
         self.ticknum += 1
         return True

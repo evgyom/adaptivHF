@@ -4,8 +4,6 @@ from Client import SocketClient
 import json
 import numpy as np
 
-
-# TODO: csinalj egy strategy-t ami evoluciosan tanit egy ann-t
 class NaiveHunterStrategy:
     def __init__(self, **kwargs):
         self.nextAction = "0"
