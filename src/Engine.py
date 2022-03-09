@@ -22,7 +22,6 @@ class AdaptIOEngine:
         elif r == 3:
             return pos + np.array([-1, 0])
 
-    # TODO: Logging megoldasa, directory alapon
     # TODO: Mit csinalunk game endnel? Mikor legyen vege? Kuldunk-e leaderboard-ot?
 
     def __init__(self, **kwargs):
@@ -315,8 +314,6 @@ class AdaptIOEngine:
 
         self.sendObservations()
 
-        #TODO: itt logolj, actions haszn�lhat�, self.field, meg self.players[i].size
-        #self.writeLog(str(self.ticknum) + '\n')
         self.writeLog(self.ticknum, actions, self.field, self.players)
 
         self.ticknum += 1
