@@ -49,6 +49,9 @@ class AdaptIODisplay():
         print('AdaptIO is started!')
 
     def updateDisplayInfo(self, tick, players, map):
+        """
+        Update the display object inner variables.
+        """
         self.updated = True
         self.tick = tick
         self.map = map
@@ -140,7 +143,7 @@ class AdaptIODisplay():
         Draw the scoreboard on the GUI. (static element)
         """
         for i in range(0, len(self.players)):
-            self.drawPlayerBoard(i, self.players[i].name, self.players[i].size)
+            self.drawPlayerBoard(i, self.players[i].name, self.players[i].size, self.players[i].active)
 
 
     def drawBlock(self, num_x, num_y, color):
@@ -153,7 +156,7 @@ class AdaptIODisplay():
         rect = pygame.Rect(num_x*BLOCK_SIZE+2, num_y*BLOCK_SIZE+2, BLOCK_SIZE-4, BLOCK_SIZE-4)
         pygame.draw.rect(self.SCREEN, color, rect, 0)
 
-    def drawPlayerBoard(self, player_id, player_name, player_size):
+    def drawPlayerBoard(self, player_id, player_name, player_size, active):
         """
         Draw one Player Board with size and name texts.
         :param x: Top left corner x position
@@ -173,11 +176,19 @@ class AdaptIODisplay():
         pygame.draw.rect(self.SCREEN, numTOcolor[player_id+4], flag, 0)
 
         font = pygame.font.SysFont(None, 30)
+        if active:
+            state = ' LIVE'
+            state_color = ALIVE_COLOR
+        else:
+            state = ' DEAD'
+            state_color = DEAD_COLOR
         sttr = 'Player ' + str(player_id)
         text_player = font.render(sttr, True, TEXT_COLOR)
         text_name = font.render(player_name, True, TEXT_COLOR)
         text_size = font.render(f'Size: {player_size}', True, TEXT_COLOR)
+        text_state = font.render(state, True, state_color)
         self.SCREEN.blit(text_player, (x + 40, y + 8))
+        self.SCREEN.blit(text_state, (x + 125, y + 8))
         self.SCREEN.blit(text_name,   (x + 50, y + 8 + 30))
         self.SCREEN.blit(text_size,   (x + 40, y + 8 + 60))
 

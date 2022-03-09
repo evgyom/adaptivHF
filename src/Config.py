@@ -11,7 +11,7 @@ MAPPATH          = "./maps/02_base.txt"
 FIELDUPDATE_PATH = "./fieldupdate/01_corner.txt"
 STARTING_SIZE    = 5
 MIN_RATIO        = 1.1
-STRATEGY_DICT    = {"Nata": "remoteplayer", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
+STRATEGY_DICT    = {"Nata": "remoteplayer", "Teszt2": "dummy", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
 VISION_RANGE     = 5
 UPDATE_MODE      = "statistical" #static
 DIFF_FROM_SIDE   = 1
@@ -42,6 +42,8 @@ MID_COLOR      = (0, 200, 0)
 HIGH_COLOR     = (0, 80, 0)
 WALL_COLOR     = (0, 0, 0)
 PLAYER_DEAD    = (255, 102, 102)
+ALIVE_COLOR    = (0, 200, 0)
+DEAD_COLOR     = (200, 0, 0)
 
 # Number representations in the Game
 EMPTY    =  0
