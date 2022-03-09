@@ -5,8 +5,6 @@ PORT = 42069
 DEFAULT_TICK_LENGTH_S = 0.3
 DISPLAY_ON = True
 
-
-
 # Engine
 MAPPATH          = "./maps/02_base.txt"
 FIELDUPDATE_PATH = "./fieldupdate/01_corner.txt"
@@ -21,7 +19,6 @@ FOODGEN_OFFSET   = 10
 FOODGEN_SCALER = 0.3
 MAXTICKS = 100
 SOLO_ENABLED = True
-
 
 #GUI
 WINDOW_HEIGHT = 800
@@ -43,6 +40,7 @@ LOW_COLOR      = (102, 200, 153)
 MID_COLOR      = (0, 200, 0)
 HIGH_COLOR     = (0, 80, 0)
 WALL_COLOR     = (0, 0, 0)
+PLAYER_DEAD    = (255, 102, 102)
 
 # Number representations in the Game
 EMPTY    =  0
@@ -53,5 +51,6 @@ PLAYER_1 =  4
 PLAYER_2 =  5
 PLAYER_3 =  6
 PLAYER_4 =  7
+DEAD     =  8
 WALL     =  9
 

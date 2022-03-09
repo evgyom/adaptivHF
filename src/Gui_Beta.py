@@ -19,14 +19,10 @@ numTOcolor = {
 }
 
 def gui(displayObj):
-    # Teszt data
-    # ====================================================
-    # Players
-
-    # ====================================================
-
-    # Init game Class                            # init gui
-    displayObj.launch()                               # running loop
+    """
+    Running display loop.
+    """
+    displayObj.launch()
 
 class AdaptIODisplay():
     """
@@ -49,10 +45,6 @@ class AdaptIODisplay():
 
         # Draw static display elements
         self.drawGrid()
-
-        #self.tick = 0
-        #self.players = []
-        #self.map = []
 
         print('AdaptIO is started!')
 
@@ -104,16 +96,6 @@ class AdaptIODisplay():
         print('AdaptIO is closed!')
         #pygame.quit()
 
-    '''
-    def loadMap(self, str_map):
-        """
-        Load the desired map.
-        :param str_map: Path to the map file.
-        """
-        self.map_original = np.transpose(np.loadtxt(str_map))
-        self.map_actual   = np.transpose(np.loadtxt(str_map))
-    '''
-
     def updateMap(self):
         """
         Update the map grid by grid according to the map_actual.
@@ -121,31 +103,21 @@ class AdaptIODisplay():
         for x in range(0, BLOCK_NUM):
             for y in range(0, BLOCK_NUM):
                 rect = pygame.Rect(x * BLOCK_SIZE + 2, y * BLOCK_SIZE + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4)
-                #print(self.map)
                 pygame.draw.rect(self.SCREEN, numTOcolor[self.map[x,y]], rect, 0)
 
-    def spanPlayers(self):
-        """
-        Span the players on the map. (not needed here)
-        """
-        # Spaning positions
-        span_1 = np.array([1        , 1])
-        span_2 = np.array([BLOCK_NUM - 2, 1])
-        span_3 = np.array([1        , BLOCK_NUM - 2])
-        span_4 = np.array([BLOCK_NUM - 2, BLOCK_NUM - 2])
-
-        span_points = np.random.permutation([span_1, span_2, span_3, span_4])
-        players = [PLAYER_1, PLAYER_2, PLAYER_3, PLAYER_4]
-
-        for i in range(len(players)):
-            self.map_actual[span_points[i][0], span_points[i][1]] = players[i]
-
     def updatePlayers(self):
+        """
+        Draw the players on the map.
+        """
         for i in range(len(self.players)):
             x = self.players[i].pos[0]
             y = self.players[i].pos[1]
             rect = pygame.Rect(x * BLOCK_SIZE + 2, y * BLOCK_SIZE + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4)
-            pygame.draw.rect(self.SCREEN, numTOcolor[i+4], rect, 0)
+
+            if self.players[i].active:
+                pygame.draw.rect(self.SCREEN, numTOcolor[i+4], rect, 0)
+            else:
+                pygame.draw.rect(self.SCREEN, PLAYER_DEAD, rect, 0)
 
     def drawGrid(self):
         """

@@ -1,5 +1,10 @@
 <img src="/pics/GPK_BME_MOGI.png">
 
+game master játék indítás <br>
+client csatlakozás <br>
+configba futtatási paraméterek <br>
+playerbe random botok <br>
+
 # AdaptIO
 
 Az AdaptIO az "Adaptív rendszerek modellezése" tárgyhoz készült játék felület. A tárgy sikeres teljesítéséhez 
