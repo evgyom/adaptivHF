@@ -4,7 +4,8 @@ from collections import Counter
 import random
 from Player import *
 from Config import *
-
+import os
+from datetime import datetime
 
 class AdaptIOEngine:
     neighbourDifferencies = {0: np.array([0, 1]), 1: np.array([0, -1]), 2: np.array([1, 0]), 3: np.array([-1, 0])}
@@ -40,6 +41,13 @@ class AdaptIOEngine:
         self.ticknum = 0
         self.strategyDict = STRATEGY_DICT
 
+        self.log = LOG
+        self.logpath = ' '
+        self.logname = ' '
+
+        if self.log:
+            self.setLog()
+
         ids = list(range(4))
         random.shuffle(ids)
 
@@ -53,6 +61,24 @@ class AdaptIOEngine:
         self.players[ids[1]].pos = np.array([self.size - diffFromSide - 1, 0 + diffFromSide])
         self.players[ids[2]].pos = np.array([0 + diffFromSide, self.size - diffFromSide - 1])
         self.players[ids[3]].pos = np.array([self.size - diffFromSide - 1, self.size - diffFromSide - 1])
+
+    def setLog(self):
+        self.logpath = LOG_PATH
+        logname = 'adaptio_log_' + datetime.now().strftime('%Y_%m_%d_%H_%M_%S' + '.txt')
+
+        try:
+            os.makedirs(self.logpath, exist_ok=True)
+            self.logfile = open(os. path. join(self.logpath, logname), "a")
+            print("Log directory and file is ready!")
+        except OSError as error:
+            print("Log directory can not be created!")
+
+    def writeLog(self, sttr):
+        self.logfile.write("Tick" + sttr)
+
+    def closeLog(self):
+        self.logfile.close()
+        print("Log closed!")
 
     def genVisibilityMask(self):
         coordlist = []
@@ -211,6 +237,10 @@ class AdaptIOEngine:
         return newpos
 
     def reset_state(self, mapPath=None, updateMapPath=None):
+        if LOG:
+            self.closeLog()
+            self.setLog()
+
         self.ticknum = 0
         if mapPath is None:
             self.field = self.field_old.copy()
@@ -278,6 +308,6 @@ class AdaptIOEngine:
         self.sendObservations()
 
         #TODO: itt logolj, actions haszn�lhat�, self.field, meg self.players[i].size
-
+        self.writeLog(str(self.ticknum) + '\n')
         self.ticknum += 1
         return True

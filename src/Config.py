@@ -4,7 +4,9 @@ IP = "localhost"
 PORT = 42069
 DEFAULT_TICK_LENGTH_S = 0.3
 DISPLAY_ON = True
-WAIT_FOR_JOIN = 5
+WAIT_FOR_JOIN = 2
+LOG = True
+LOG_PATH = './log'
 
 # Engine
 MAPPATH          = "./maps/02_base.txt"
@@ -17,16 +19,16 @@ UPDATE_MODE      = "statistical" #static
 DIFF_FROM_SIDE   = 1
 FOODGEN_COOLDOWN = 10
 FOODGEN_OFFSET   = 10
-FOODGEN_SCALER = 0.3
-MAXTICKS = 100
-SOLO_ENABLED = True
+FOODGEN_SCALER   = 0.3
+MAXTICKS         = 100
+SOLO_ENABLED     = True
 
 #GUI
 WINDOW_HEIGHT = 800
-WINDOW_WIDTH = 1000
-BLOCK_NUM    = 40
-BLOCK_SIZE   = 20
-FPS          = 40
+WINDOW_WIDTH  = 1000
+BLOCK_NUM     = 40
+BLOCK_SIZE    = 20
+FPS           = 40
 
 # Colors
 GRID_COLOR     = (60, 60, 60)

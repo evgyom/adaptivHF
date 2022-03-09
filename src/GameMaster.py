@@ -105,6 +105,8 @@ class GameMaster:
             self.autoStartTimer.cancel()
         if DISPLAY_ON:
             self.disp.kill()
+        if LOG:
+            self.engine.closeLog()
         print("Close finished")
 
     def run(self):
