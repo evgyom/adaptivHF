@@ -4,6 +4,7 @@ IP = "localhost"
 PORT = 42069
 DEFAULT_TICK_LENGTH_S = 0.3
 DISPLAY_ON = True
+WAIT_FOR_JOIN = 5
 
 # Engine
 MAPPATH          = "./maps/02_base.txt"

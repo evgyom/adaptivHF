@@ -182,6 +182,11 @@ class AdaptIODisplay():
         self.SCREEN.blit(text_size,   (x + 40, y + 8 + 60))
 
     def updateTick(self):
+        """
+        Draw the Tick on Display.
+        """
+        block = pygame.Rect(804, 400, 192, 60)
+        pygame.draw.rect(self.SCREEN, BOARD_COLOR, block, 0)
         font = pygame.font.SysFont(None, 40)
         text_tick = font.render(f'Tick: {self.tick}', True, TEXT_COLOR)
         self.SCREEN.blit(text_tick, (830, 420))

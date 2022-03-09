@@ -13,7 +13,6 @@ class STATE:
     WAIT_COMMAND = 2
     WAIT_START = 3
 
-
 class RepeatTimer(Timer):
     def run(self):
         while not self.finished.wait(self.interval) and not self.finished.is_set():
@@ -51,7 +50,7 @@ class GameMaster:
     def _processTick(self):
         if self.gameState == STATE.PRERUN:
             if self.autoStartTimer is None:
-                self.autoStartTimer = Timer(30, self._startGame)
+                self.autoStartTimer = Timer(WAIT_FOR_JOIN, self._startGame)
                 self.autoStartTimer.start()
             if not self.serv.checkMissingPlayers():
                 self._startGame()
