@@ -4,7 +4,7 @@ IP = "localhost"
 PORT = 42069
 DEFAULT_TICK_LENGTH_S = 0.3
 DISPLAY_ON = True
-WAIT_FOR_JOIN = 2
+WAIT_FOR_JOIN = 1
 LOG = True
 LOG_PATH = './log'
 

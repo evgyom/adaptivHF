@@ -73,8 +73,16 @@ class AdaptIOEngine:
         except OSError as error:
             print("Log directory can not be created!")
 
-    def writeLog(self, sttr):
-        self.logfile.write("Tick" + sttr)
+    def writeLog(self, ticknum, actions, field, players):
+        delimer = '; '
+        field_str = str(field.tolist())
+        players_info = []
+        for player in players:
+            player_info = str(player.name) + delimer + str(player.size)
+            players_info.append(player_info)
+
+        data = str(ticknum) + delimer + str(actions) + delimer + str(players_info) + delimer + field_str +'\n'
+        self.logfile.write(data)
 
     def closeLog(self):
         self.logfile.close()
@@ -308,6 +316,8 @@ class AdaptIOEngine:
         self.sendObservations()
 
         #TODO: itt logolj, actions haszn�lhat�, self.field, meg self.players[i].size
-        self.writeLog(str(self.ticknum) + '\n')
+        #self.writeLog(str(self.ticknum) + '\n')
+        self.writeLog(self.ticknum, actions, self.field, self.players)
+
         self.ticknum += 1
         return True
