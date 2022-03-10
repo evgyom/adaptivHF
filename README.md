@@ -1,10 +1,5 @@
 <img src="/pics/GPK_BME_MOGI.png">
 
-game master játék indítás <br>
-client csatlakozás <br>
-configba futtatási paraméterek <br>
-playerbe random botok <br>
-
 # AdaptIO
 
 Az AdaptIO az "Adaptív rendszerek modellezése" tárgyhoz készült játék felület. A tárgy sikeres teljesítéséhez 
@@ -15,12 +10,16 @@ végén, melyen az agent logikájának kialakítását és betanításának főb
 ez után természetesen egymással is megversenyeztetjük!
 
 A feladat elkészítése során a tárgyban tanult genetikus, bakteriális vagy neurális háló alapú megoldásokat preferáljuk.
-Nem tiltott tovább lépni se és a tárgyban esetlegesen nem érintett teknikákat alkalmazni. A feladat elkészítése során
+Nem tiltott tovább lépni se és a tárgyban esetlegesen nem érintett technikákat alkalmazni. A feladat elkészítése során
 a környezet szabadon átalakítható, viszont a bemutatás egységesen a master branchen elérhető verziót fogjuk használni.
 
-<img src="/pics/display.png">
+<img src="/pics/displayy.png">
 
 ## Telepítés
+
+Repository letöltése vagy clonozása.
+
+    git clone www.....
 
 ### Függőségek
 
@@ -41,15 +40,24 @@ saját gépről tudnak majd futni socket kapcsolaton keresztül bejelentkezve.
 
 ## Szabályok
 
-A játékban minden agent egy kockát foglal el. Végrehajtható akcióként egy iterációban 9 választási lehetősége van.
+A játékban minden agent egy kockányi mezőt foglal el. Végrehajtható akcióként egy iterációban 9 választási lehetősége van.
 Vagy helyben marad vagy a 8 szomszédos mező valamelyikére mozog.
 
 Az agentek rendelkeznek mérettel, mely a játék kezdetén egy alap paraméter (5). Az agentek mérete a játék során növelhető táplálkozással.
-A játéktéren található kaja mezők különböző intenzitással (1, 2, 3). Ha az agent kaját tartalmazó mezőre lép
+A játéktéren találhatók kaja mezők különböző intenzitással (1, 2, 3). Ha az agent kaját tartalmazó mezőre lép
 a bekebelezés automatikusan megtörténik és az agent mérete a kaja méretével növekszik. A pályán továbbá találhatóak falak, melyek nem elmozdíthatóak, nem termelődik rajtük kaja
-és rálépni se lehet. Az agentek azonban átlátnak a falakon.
+és rálépni se lehet. Az agentek átlátnak a falakon.
 
-A térképen fellelhető pálya elemek:
+Ha több játokos azonos időben ugyan arra a mezőre lépne:
+- először ellenőrizzük, hogy a legnagyobb játékos meg tudja-e enni a második legnagyobbat.
+- ha igen, mindenkit megeszik.
+- ha nem a játékosok korábbi helyükön maradnak, mintha nem léptek volna.
+
+A bekebelezés (egyik játékos megeszi a másikat) akkor jön létre, ha a kisebb játékos méretét felszorozzuk
+a Config.py fileban található MIN_RATIO paraméterrel és még így is kisebb, mint a nagyobb játékos.
+Minden más esetben a játékosok közti méretkülönbség túl kicsi, így csak lepattanak egymésról és korábbi helyükön maradnak.
+ 
+### Pálya elemek:
 
 <img src="/pics/map.png"> <br>
 
@@ -61,15 +69,25 @@ A térképen fellelhető pálya elemek:
 | 3     |  kaja HIGH  |   zöld |
 | 9     |     fal     | fekete |
 
+Előre generált pályák a maps mappában találhatóak, de további pályák is generálhatóak a feladat minél jobb
+megoldása érdekében. Pályageneráláshoz hasznos lehet a maps.xlsx fájl. 
 
-Az agentek egymást is bekebelezhetik, amennyiben az agentek közötti méretkülönbség százalékos formában meghaladja
-a 10%-ot.
+### Kaja frissítési térkép
 
 <img src="/pics/foodupdate.png">
 
+Minden mezőhöz a pályán tartozik egy kaja termelődési valószínűség, mely segítségével a játék
+lefutása során a kaják térképen való elhelyezkedése jelentősen megváltozhat. A Config.py fileban
+rögzített paraméterek szerint bizonyos tickenként valamilyen térkép elosztás szerint random helyeken
+1 értékű kaják jelennek meg, melyek a tickek során felhalmozódhatnak 2 vagy 3 szintig. 
+
 ## Útmutató
 
-**Config.py**
+### Paraméterek
+
+**Config.py** <br>
+Ez a file tartalmazza a játék főbb beállításait, melyeket a készülés során is lehet állítani. Illetve
+itt vannak meghatározva a játékszabályok és a kijelző színpalettája.
 
 | **Paraméter**         | **Default érték**             | **Magyarázat**                                         |
 |-----------------------|-------------------------------|--------------------------------------------------------|
@@ -96,6 +114,28 @@ a 10%-ot.
 | FOODGEN_SCALER        | 0.3                           | Kaja termelődés valószínűségi térképének módosítója.   |
 | MAXTICKS              | 100                           | Játék maximális Tick száma                             |
 | SOLO_ENABLED          | True                          | A játék futásának engedélyezése solo módba             |
+
+### Játékos stratégiák
+
+**Player.py** <br>
+Ez a file tartalmaz pár előre megírt botot, melyekkel tesztelhető a rendszer és az új fejlesztésű játékos teljesítménye.
+
+**RemotePlayerStrategy:**<br>
+A távoli csatlakozású játékos. Erre a beállításra lesz szükség a saját játékosunk futtatásához.
+A `Main_Client.py`-ban kódolt 'hunter' így tud csatlakozni a GameMasterhez.
+
+**DummyStrategy:** <br>
+Indítás után meghaló játékos.
+
+**RandBotStrategy:** <br>
+Random akciókat választó játékos.
+
+**NaiveStrategy:** <br>
+Legközelebbi legnagyobb értékű kaja felé haladó játékos.
+
+**NaiveHunterStrategy:** <br>
+Legközelebbi legnagyobb értékű kaja felé haladó játékos, de ha másik játékost lát és nagyobb
+nála, akkor vadászk rá.
 
 ## Credits
 Gyöngyösi Natabara (natabara@gyongyossy.hu) <br>
