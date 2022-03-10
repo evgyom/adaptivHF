@@ -116,20 +116,7 @@ class GameMaster:
         try:
             while self.pollGameCommands:
                 if DISPLAY_ON:
-                    #TODO: Ezt csomagold be egy fuggvenybe
-                    if self.disp.run:
-                        for event in pygame.event.get():
-                            if event.type == pygame.QUIT:
-                                self.close()
-                                print('AdaptIO is closed!')
-                        if self.disp.updated:
-                            self.disp.updateDisplay()
-                            self.disp.updated = False
-                        if self.disp.run:
-                            pygame.display.update()
-                        else:
-                            pygame.quit()
-
+                    self.disp.launchDisplay(self.close)
 
                 action = self.serv.getGameMasterFIFO()
                 if action is None:

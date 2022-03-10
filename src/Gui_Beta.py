@@ -79,20 +79,21 @@ class AdaptIODisplay():
         self.updatePlayers()
         self.updateScoreBoard()
 
-    def launch(self):
-        while self.run:
-            print(time.time())
+    def launchDisplay(self, callback):
+        if self.run:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.run = False
+                    callback
                     self.closeFunction()
                     print('AdaptIO is closed!')
             if self.updated:
                 self.updateDisplay()
                 self.updated = False
-            pygame.display.flip()
-            self.CLOCK.tick(FPS)
-        pygame.quit()
+            if self.run:
+                pygame.display.update()
+            else:
+                pygame.quit()
 
     def kill(self):
         self.run = False
