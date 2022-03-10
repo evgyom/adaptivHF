@@ -72,6 +72,17 @@ Minden más esetben a játékosok közti méretkülönbség túl kicsi, így csa
 Előre generált pályák a maps mappában találhatóak, de további pályák is generálhatóak a feladat minél jobb
 megoldása érdekében. Pályageneráláshoz hasznos lehet a maps.xlsx fájl. 
 
+Javaslat pályageneráláshoz:
+- Egy meglévő pálya lapján jobb klikk
+- Áthelyezés vagy másolás
+- Legyen másolat opció kiválasztása
+- OK
+- Módosítsuk a pályát
+- Jelöljük ki a pálya elemit (Ctrl+C)
+- Másoljuk egy txt fileba a maps mappán belül (Ctrl+V)
+
+Ezen lépések alkalmazásával az összes kényelmi formázás megtartható.
+
 ### Kaja frissítési térkép
 
 <img src="/pics/foodupdate.png">
