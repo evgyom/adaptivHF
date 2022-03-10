@@ -1,4 +1,3 @@
-
 import numpy as np
 from collections import Counter
 import random
@@ -21,8 +20,6 @@ class AdaptIOEngine:
             return pos + np.array([1, 0])
         elif r == 3:
             return pos + np.array([-1, 0])
-
-    # TODO: Mit csinalunk game endnel? Mikor legyen vege? Kuldunk-e leaderboard-ot?
 
     def __init__(self, **kwargs):
         self.mapPath = MAPPATH

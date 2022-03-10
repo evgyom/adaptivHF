@@ -7,16 +7,13 @@ from queue import Queue, Empty
 import json
 import struct
 
-
 def actionHandler(name, payload, server):
     if name in server.playerNames:
         server.queues[name].put(payload)
 
 def gameControlHandler(name, payload, server):
     if name==server.masterName:
-        #print(payload)
         server.queues[name].put(payload)
-
 
 class MultiSocketServer:
     def __init__(self, ip, port, masterName, playerNames):
@@ -71,7 +68,6 @@ class MultiSocketServer:
             return datacls["command"], datacls["name"], datacls["payload"]
 
     def sendData(self, data, name):
-        # print(data, name)
         if name == "all":
             for key, queue in self.sendQueues.items():
                 queue.put(data)
@@ -134,13 +130,11 @@ class MultiSocketServer:
                         self.missingPlayers.remove(name)
 
             else:
-                # print(f"Closing connection to {data.addr}")
                 self.sel.unregister(sock)
                 sock.close()
         if mask & selectors.EVENT_WRITE:
             if data.name is not None:
                 while not self.sendQueues[data.name].empty():
-                    # print(f"Echoing {data.outb!r} to {data.addr}")
                     msg = self.sendQueues[data.name].get().encode("utf-8")
                     data.outb = struct.pack("i", len(msg)) + msg
                     sent = sock.send(data.outb)  # Should be ready to write
