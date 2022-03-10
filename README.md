@@ -70,7 +70,7 @@ Minden más esetben a játékosok közti méretkülönbség túl kicsi, így csa
 | 9     |     fal     | fekete |
 
 Előre generált pályák a maps mappában találhatóak, de további pályák is generálhatóak a feladat minél jobb
-megoldása érdekében. Pályageneráláshoz hasznos lehet a maps.xlsx fájl. 
+megoldása érdekében. Pálya generáláshoz hasznos lehet a **maps.xlsx** fájl. 
 
 Javaslat pályageneráláshoz:
 - Egy meglévő pálya lapján jobb klikk
@@ -91,6 +91,10 @@ Minden mezőhöz a pályán tartozik egy kaja termelődési valószínűség, me
 lefutása során a kaják térképen való elhelyezkedése jelentősen megváltozhat. A Config.py fileban
 rögzített paraméterek szerint bizonyos tickenként valamilyen térkép elosztás szerint random helyeken
 1 értékű kaják jelennek meg, melyek a tickek során felhalmozódhatnak 2 vagy 3 szintig. 
+
+Előre generált valószínűségi térképek a fieldupdate mappában találhatóak, de további térképek 
+is generálhatóak a feladat minél jobb megoldása érdekében. 
+Térkép generáláshoz hasznos lehet a **fieldupdate.xlsx** fájl. 
 
 ## Útmutató
 
