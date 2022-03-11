@@ -166,9 +166,9 @@ A motor az alábbi lépéseket végzi el minden ciklusban ebben a sorrendben:
 - A tervezett akciók után kialakult ütközések megoldása (bekebelezés, visszapattanás, lásd fentebb)
 - Játékosok pozíciójának és új méretének véglegesítése
 - Étel növesztése a térképen
-- Látótérben található információk kiküldése a játékosoknak
 - Log információk írása
 - Tick sorszám inkrementálása
+- Látótérben található információk kiküldése a játékosoknak
 
 ## Játékmester működése
 Gamemaster.py
@@ -191,6 +191,7 @@ https://www.w3schools.com/js/js_json_intro.asp
 
 Python nyelven dict, list, str és float értékekkel a JSON funkcionalitást egyszerűen reprodukálhatjuk, a json.loads() és a json.dumps() parancsokkal könnyedén konvertálhatunk ilyen struktúrákat egyik formátumból a másikba.
 Az alábbiakban az érvényes üzenet struktúrák kerülnek részletezésre.
+Fontos kiegészítés: A kliens-szerver kommunikáció során futtatókörnyezettől függően 2-5 ms késleltetés felléphet tickenként, így érdemes az akciót előállító folyamatot a játékmotor ciklusidejénél legalább ennyivel rövidebbre tervezni. 
 
 ### Szerveroldali üzenetek
 Ezen üzeneteket a szerver küldi a kliensnek.

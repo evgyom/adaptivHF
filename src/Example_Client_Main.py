@@ -83,7 +83,6 @@ class RemoteNaiveHunterStrategy:
         elif fulljson["type"] == "gameData":
             jsonData = fulljson["payload"]
             if "pos" in jsonData.keys() and "tick" in jsonData.keys() and "active" in jsonData.keys() and "size" in jsonData.keys() and "vision" in jsonData.keys():
-
                 if self.oldpos is not None:
                     if tuple(self.oldpos) == tuple(jsonData["pos"]):
                         self.oldcounter += 1
