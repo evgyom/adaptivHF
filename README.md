@@ -75,13 +75,16 @@ Előre generált pályák a maps mappában találhatóak, de további pályák i
 megoldása érdekében. Pálya generáláshoz hasznos lehet a **maps.xlsx** fájl. 
 
 Javaslat pályageneráláshoz:
+- Árdemes a `01_empty_ringet` másolni és csak a keretezett bal felső sarokba rajzolni, a többi tükröződik.
 - Egy meglévő pálya lapján jobb klikk
 - Áthelyezés vagy másolás
+- Válasszuk a (végére) opciót
 - Legyen másolat opció kiválasztása
 - OK
 - Módosítsuk a pályát
 - Jelöljük ki a pálya elemit (Ctrl+C)
 - Másoljuk egy txt fileba a maps mappán belül (Ctrl+V)
+- Figyeljünk, hogy ne legyen üres sor, a fájl 40 sort tartalmazzon
 
 Ezen lépések alkalmazásával az összes kényelmi formázás megtartható.
 

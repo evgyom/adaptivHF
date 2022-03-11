@@ -90,8 +90,8 @@ class NaiveHunterStrategy:
                         elif jsonData["vision"][idx]["relative_coord"][i] < 0:
                             actstring += "-"
 
+                print(actstring)
                 sendData(json.dumps({"command": "SetAction", "name": "Nata", "payload": actstring}))
-
 
 hunter = NaiveHunterStrategy()
 
