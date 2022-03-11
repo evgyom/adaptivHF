@@ -220,9 +220,9 @@ Az elérhető parancsok a következők:
                  Tiltott nevek: a configban megadott játékmester név és az 'all'.
 - 'SetAction' Ebben az esetben a payload az **akció string**, amely két karaktert tartalmaz az X és az Y koordináták (matematikai mátrix indexelés) menti elmozdulásra. A karakterek értékei **'0'**: helybenmaradás az adott tengely mentén, **'+'** pozitív irányú lépés, **'-'** negatív irányú lépés lehetnek. Amennyiben egy tick ideje alatt nem küldünk értéket az alapértelmezett '00' kerül végrehajtásra.
 - 'GameControl' üzeneteket csak a Config.py-ban megadott játékmester névvel lehet küldeni, ezek a játékmenetet befolyásoló üzenetek. A payload az üzenet típusát (type), valamint az ahhoz tartozó 'data' adatokat kell, hogy tartalmazza. 
-    - 'start' type elindítja a játékot egy "readyToStart" üzenetet küldött játék esetén, 'data' mezője üres (*None*)
-    - 'reset' type egy játék után várakozó 'leaderBoard'-ot küldött játékot állít alaphelyzetbe. A 'data' mező *{'mapPath':None, vagy elérési útvonal, 'updateMapPath': None, vagy elérési útvonal}* formátumú, ahol None esetén az előző pálya és növekedési map kerül megtartásra, míg elérési útvonal megadása esetén új pálya kerül betöltésre annak megfelelően.
-    - 'interrupt' type esetén a 'data' mező üres (*None*), ez megszakítja a szerver futását és szabályosan leállítja azt.
+    - 'start' type elindítja a játékot egy "readyToStart" üzenetet küldött játék esetén, 'data' mezője üres (**None**)
+    - 'reset' type egy játék után várakozó 'leaderBoard'-ot küldött játékot állít alaphelyzetbe. A 'data' mező **{'mapPath':None, vagy elérési útvonal, 'updateMapPath': None, vagy elérési útvonal}** formátumú, ahol None esetén az előző pálya és növekedési map kerül megtartásra, míg elérési útvonal megadása esetén új pálya kerül betöltésre annak megfelelően.
+    - 'interrupt' type esetén a 'data' mező üres (**None**), ez megszakítja a szerver futását és szabályosan leállítja azt.
 
 
 ## Logolás
