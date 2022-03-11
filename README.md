@@ -30,11 +30,11 @@ A futtatáshoz az alábbi python packagekre lesz szükség:
 
 ### Indítás
 
-`GameMaster.py` futtatása: <br>
+`Main.py` futtatása: <br>
 Elindítja a játékot. Minden szükséges paraméter a Config.py fileban található, indítás előtt
 a paraméterek módosíthatóak.
 
-`Main_Client.py` futtatésa: <br>
+`Example_Client_Main.py` futtatása: <br>
 Csatlakozó kliens játékos. Ez a file ad mintát az elkészítendő játékos kódjához. A játékosok
 saját gépről tudnak majd futni socket kapcsolaton keresztül bejelentkezve.
 
@@ -151,12 +151,84 @@ Indítás után meghaló játékos.
 Random akciókat választó játékos.
 
 **NaiveStrategy:** <br>
-Legközelebbi legnagyobb értékű kaja felé haladó játékos.
+A látóterének legnagyobb értékű kajája felé haladó játékos (egyenlőség esetén a bal felső a célpont).
 
 **NaiveHunterStrategy:** <br>
-Legközelebbi legnagyobb értékű kaja felé haladó játékos, de ha másik játékost lát és nagyobb
-nála, akkor vadászk rá.
+A látóterének legnagyobb értékű kajája felé haladó játékos (egyenlőség esetén a bal felső a célpont), de ha másik játékost lát és meg tudja enni, akkor vadászk rá.
+
+## Motor működése
+Engine.py
+
+A játékmestert és a játékmotort alapvetően a feladat során nem kell programozni, de a működését érdemes megérteni.   
+A motor az alábbi lépéseket végzi el minden ciklusban ebben a sorrendben:   
+- Kilépési feltétel vizsgálata (maximális tick szám, élő játékosok száma)
+- Tervezett akciók végrehajtása (két karakterből álló stringek (egy-egy tengelyhez): "0" a tengely menti helyben maradás, "+" a pozitív irányú lépés, "-" a negatív irányú lépés)
+- A tervezett akciók után kialakult ütközések megoldása (bekebelezés, visszapattanás, lásd fentebb)
+- Játékosok pozíciójának és új méretének véglegesítése
+- Étel növesztése a térképen
+- Látótérben található információk kiküldése a játékosoknak
+- Log információk írása
+- Tick sorszám inkrementálása
+
+## Játékmester működése
+Gamemaster.py
+
+A játékmester a motort és a kommunikációs szervert koordinálja, fogadja a játék irányító üzeneteket.   
+A játékmester állapotai a következők:
+- PRERUN: Az első futás előtti állapot, ilyenkor a motor már futáskész, a szerver képes fogadni a kapcsolatokat, de csak akkor indul el, ha minden távoli játékos felregisztrált a szerverre, vagy ha letelik az előre beállított időtartam le nem telik (30 másodperc).
+- RUNNING: A játék maga fut, a motort ciklikusan léptetjük. A megadott ciklusidő a feldolgozási ciklusok indításai között eltelt idő.
+- WAIT_COMMAND: A játék futásának végén ebbe az állapotba kerül, itt a reset GameControl paranccsal lehetséges új játékot indítani akár új térkép betöltése mellett is. A maximális várakozási idő lejártával a program automatikusan kilép.
+- WAIT_START: A reset parancs után a játék ebbe az állapotba kerül. Ekkor start GameControl paranccsal lehetséges az indítás. Ebben az állapotban a játék végtelen ideig várakozik.
+
+Az összes fenti állapotból ki lehet lépni interrupt GameControl paranccsal.
+A játékosok a szerverre való csatlakozáskor meg kell, hogy adják nevüket, a SetName paranccsal, egyéb esetben nem kapnak információt a játékmestertől.
+
+## Kliens-szerver kommunikáció
+Example_Client_Main.py
+
+A feladat során a játékba kliensként van lehetőség becsatlakozni. A kommunikáció kétirányú, TCP/IP protokollon alapuló socket kommunikáció, melyet JSON formátumban valósítunk meg.   
+https://www.w3schools.com/js/js_json_intro.asp
+
+Python nyelven dict, list, str és float értékekkel a JSON funkcionalitást egyszerűen reprodukálhatjuk, a json.loads() és a json.dumps() parancsokkal könnyedén konvertálhatunk ilyen struktúrákat egyik formátumból a másikba.
+Az alábbiakban az érvényes üzenet struktúrák kerülnek részletezésre.
+
+### Szerveroldali üzenetek
+Ezen üzeneteket a szerver küldi a kliensnek.
+Két kötelező kulccsal rendelkeznek, ezek: 
+- 'type' (leaderBoard, readyToStart, started, gameData, serverClose)
+- 'payload' (az üzenet adatrésze)
+
+A 'payload' tartalma típusfüggő:
+
+- 'leaderBoard' type a játék végét jelzi, a payload tartalma **{'ticks': a játék hossza tickekben, 'players':[{'name': jáétékosnév, 'active': él-e a játékos?, 'maxSize': a legnagyobb elért méret a játék során},...]}**
+- 'readyToStart' type esetén a szerver az indító üzenetre vár esetén, a payload üres (**None**)
+- 'started' type esetén a játék elindul, tickLength-enként kiküldés és akciófogadás várható payload **{'tickLength': egy tick hossza }**
+- 'gameData' type esetén az üzenet a játékos által elérhető információkat küldi, a payload:
+                                    **{"pos": abszolút pozíció a térképen, "tick": az aktuális tick sorszáma, "active": a saját életünk állapota,
+                                    "size": saját méret, "vision": [{"relative_coord": az adott megfigyelt mező relatív koordinátája,
+                                                                    "value": az adott megfigyelt mező értéke (0-3,9),
+                                                                    "player": None, ha nincs aktív játékos, vagy
+                                                                            {name: a mezőn álló játékos neve, size: a mezőn álló játékos mérete}},...] }**
+- 'serverClose' type esetén a játékmester szabályos, vagy hiba okozta bezáródásáról értesülünk, a payload üres (**None**)
+
+### Kliensoldali üzenetek
+Az alábbi üzenetekkel lehetünk ráhatással a játékmester és a játékmotor viselkedésére.
+
+Az elküldött adat struktúrája minden esetben **{"command": Parancs típusa, "name": A küldő azonosítója, "payload": az üzenet adatrésze}**   
+Az elérhető parancsok a következők:
+- 'SetName' A kliens felregisztrálja a saját nevét a szervernek, enélkül a nevünkhöz tartozó üzenetek nem térnek vissza.
+                 Tiltott nevek: a configban megadott játékmester név és az 'all'.
+- 'SetAction' Ebben az esetben a payload az **akció string**, amely két karaktert tartalmaz az X és az Y koordináták (matematikai mátrix indexelés) menti elmozdulásra. A karakterek értékei **'0'**: helybenmaradás az adott tengely mentén, **'+'** pozitív irányú lépés, **'-'** negatív irányú lépés lehetnek. Amennyiben egy tick ideje alatt nem küldünk értéket az alapértelmezett '00' kerül végrehajtásra.
+- 'GameControl' üzeneteket csak a Config.py-ban megadott játékmester névvel lehet küldeni, ezek a játékmenetet befolyásoló üzenetek. A payload az üzenet típusát (type), valamint az ahhoz tartozó 'data' adatokat kell, hogy tartalmazza. 
+    - 'start' type elindítja a játékot egy "readyToStart" üzenetet küldött játék esetén, 'data' mezője üres (**None**)
+    - 'reset' type egy játék után várakozó 'leaderBoard'-ot küldött játékot állít alaphelyzetbe. A 'data' mező **{'mapPath':None, vagy elérési útvonal, 'updateMapPath': None, vagy elérési útvonal}** formátumú, ahol None esetén az előző pálya és növekedési map kerül megtartásra, míg elérési útvonal megadása esetén új pálya kerül betöltésre annak megfelelően.
+    - 'interrupt' type esetén a 'data' mező üres (**None**), ez megszakítja a szerver futását és szabályosan leállítja azt.
+
+
+## Logolás
+A Config.py fileban engedélyezhető a logolás. Ebben az esetben a játékmotor minden lépés végén beleír a megfelelő útvonalon található fileba. Minden lépést egyetlen sortörés karakter választ el. A lépések adatai az alábbi JSON formátumban kerülnek mentésre:   
+**{"tick:": lépés sorszáma, "actions": 4 hosszú akcióstring tömb, "player_info":[{"name": játékos neve, "pos": játékos pozíciója, "size": játékos aktuális mérete},...], "field":játéktér játékosok nélkül}**
 
 ## Credits
-Gyöngyösi Natabara (natabara@gyongyossy.hu) <br>
+Gyöngyössy Natabara (gyongyossy.natabara@mogi.bme.hu) <br>
 Nagy Balázs (nagybalazs@mogi.bme.hu)
