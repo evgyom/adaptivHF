@@ -13,7 +13,7 @@ A feladat elkészítése során a tárgyban tanult genetikus, bakteriális vagy 
 Nem tiltott tovább lépni se és a tárgyban esetlegesen nem érintett technikákat alkalmazni. A feladat elkészítése során
 a környezet szabadon átalakítható, viszont a bemutatás egységesen a master branchen elérhető verziót fogjuk használni.
 
-<img src="/pics/displayy.png">
+<img src="/pics/displayy.png" width="600">
 
 ## Telepítés
 
@@ -46,7 +46,9 @@ Vagy helyben marad vagy a 8 szomszédos mező valamelyikére mozog.
 Az agentek rendelkeznek mérettel, mely a játék kezdetén egy alap paraméter (5). Az agentek mérete a játék során növelhető táplálkozással.
 A játéktéren találhatók kaja mezők különböző intenzitással (1, 2, 3). Ha az agent kaját tartalmazó mezőre lép
 a bekebelezés automatikusan megtörténik és az agent mérete a kaja méretével növekszik. A pályán továbbá találhatóak falak, melyek nem elmozdíthatóak, nem termelődik rajtük kaja
-és rálépni se lehet. Az agentek átlátnak a falakon.
+és rálépni se lehet. Az agentek átlátnak a falakon. A játokosok a következő látomezővel rendelkeznek:
+
+<img src="/pics/latomezo.png" width="200"> <br>
 
 Ha több játokos azonos időben ugyan arra a mezőre lépne:
 - először ellenőrizzük, hogy a legnagyobb játékos meg tudja-e enni a második legnagyobbat.
@@ -59,7 +61,7 @@ Minden más esetben a játékosok közti méretkülönbség túl kicsi, így csa
  
 ### Pálya elemek:
 
-<img src="/pics/map.png"> <br>
+<img src="/pics/map.png" width="200"> <br>
 
 | Érték |  Jelentés   |   Szín |
 |-------|:-----------:|-------:|
@@ -85,7 +87,7 @@ Ezen lépések alkalmazásával az összes kényelmi formázás megtartható.
 
 ### Kaja frissítési térkép
 
-<img src="/pics/foodupdate.png">
+<img src="/pics/foodupdate.png" width="200">
 
 Minden mezőhöz a pályán tartozik egy kaja termelődési valószínűség, mely segítségével a játék
 lefutása során a kaják térképen való elhelyezkedése jelentősen megváltozhat. A Config.py fileban
