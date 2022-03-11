@@ -95,6 +95,7 @@ class GameMaster:
             self.timer = RepeatTimer(self.tickLength, self._processTick)
 
     def close(self):
+        self.serv.sendData(json.dumps({"type": "serverClose", "payload": None}), "all")
         self.timer.cancel()
         self.timer.join()
         self.pollGameCommands = False
@@ -138,8 +139,3 @@ class GameMaster:
         except KeyboardInterrupt:
             print("Interrupted, stopping")
             self.close()
-
-
-if __name__ == "__main__":
-    gm = GameMaster()
-    gm.run()

@@ -1,3 +1,5 @@
+#encoding: utf-8
+
 import struct
 import sys
 import socket
@@ -8,14 +10,15 @@ import json
 from queue import Queue
 from threading import Thread
 
-#Message: {command:, name:, payload:}
-
-messages = [json.dumps({"command": "SetName", "name": "Player", "payload": None}).encode("utf-8"),
-            json.dumps({"command": "printer", "name": "Player", "payload": "Check"}).encode("utf-8")]
-
 
 class SocketClient:
     def __init__(self, ip, port, callback):
+        """
+        :param ip: Szerver IP
+        :param port: Szerver PORT
+        :param callback: Függvény referencia, melynek szignatúrája callback(fulljson, sendData), ahol a fulljson a szervertől érkező üzenet, a sendData a kliens küldő függvénye.
+        Ez a callback meghívódik a klienshez érkező érvényes üzenetek esetén külön szálon futva.
+        """
         self.host = ip
         self.port = port
         self.running = True
@@ -24,20 +27,32 @@ class SocketClient:
         self.callback = callback
 
     def sendData(self, data):
+        """
+        :param data: Stringbe kódolt JSON, melyet ki kell küldeni a szervernek.
+        :return:
+        """
         self.sendQueue.put(data)
 
 
     def start(self):
+        """
+        A klienst külön szálon elindító metódus, nem blockol.
+        :return:
+        """
         self.running = True
         self.t = Thread(target=self._run)
         self.t.start()
 
     def stop(self):
+        """
+        A metódus megszakítja a kliens futását, és megvárja a feldolgozó szál leállását.
+        :return:
+        """
         self.running = False
         if self.t is not None:
             self.t.join()
 
-    def start_connections(self, host, port, num_conns):
+    def _start_connections(self, host, port):
         server_addr = (host, port)
         print(f"Starting connection to {server_addr}")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -46,7 +61,7 @@ class SocketClient:
         events = selectors.EVENT_READ | selectors.EVENT_WRITE
         self.sel.register(sock, events)
 
-    def service_connection(self, key, mask):
+    def _service_connection(self, key, mask):
         sock = key.fileobj
         if mask & selectors.EVENT_READ:
             recv_data = ""
@@ -68,7 +83,6 @@ class SocketClient:
                 if jsondata is not None:
                     if "type" in jsondata.keys() and "payload" in jsondata.keys():
                         self.callback(jsondata, self.sendData)
-                #print(f"Received {recv_data}")
             if not recv_data:
                 print(f"Closing connection ")
                 self.sel.unregister(sock)
@@ -81,14 +95,14 @@ class SocketClient:
 
     def _run(self):
         self.sel = selectors.DefaultSelector()
-        self.start_connections(self.host, self.port, 1)
+        self._start_connections(self.host, self.port)
 
         try:
             while self.running:
                 events = self.sel.select(timeout=1)
                 if events:
                     for key, mask in events:
-                        self.service_connection(key, mask)
+                        self._service_connection(key, mask)
                 # Check for a socket being monitored to continue.
                 if not self.sel.get_map():
                     print("Closing")
