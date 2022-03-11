@@ -98,7 +98,6 @@ class AdaptIODisplay():
     def kill(self):
         self.run = False
         print('AdaptIO is closed!')
-        #pygame.quit()
 
     def updateMap(self):
         """
@@ -178,7 +177,7 @@ class AdaptIODisplay():
 
         font = pygame.font.SysFont(None, 30)
         if active:
-            state = ' LIVE'
+            state = ' ALIVE'
             state_color = ALIVE_COLOR
         else:
             state = ' DEAD'

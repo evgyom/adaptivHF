@@ -70,15 +70,12 @@ class AdaptIOEngine:
             print("Log directory can not be created!")
 
     def writeLog(self, ticknum, actions, field, players):
-        delimer = '; '
-        field_str = str(field.tolist())
         players_info = []
         for player in players:
-            player_info = str(player.name) + delimer + str(player.size)
-            players_info.append(player_info)
+            players_info.append({"name":player.name,"pos":player.pos.tolist(),"size":player.size})
 
-        data = str(ticknum) + delimer + str(actions) + delimer + str(players_info) + delimer + field_str +'\n'
-        self.logfile.write(data)
+
+        self.logfile.write(json.dumps({"tick:":ticknum,"actions":actions,"player_info":players_info,"field":field.tolist() })+"\n")
 
     def closeLog(self):
         self.logfile.close()

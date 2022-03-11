@@ -4,7 +4,7 @@ from Client import SocketClient
 import json
 import numpy as np
 
-class NaiveHunterStrategy:
+class RemoteNaiveHunterStrategy:
     def __init__(self, **kwargs):
         self.nextAction = "0"
         self.oldpos = None
@@ -90,13 +90,12 @@ class NaiveHunterStrategy:
                         elif jsonData["vision"][idx]["relative_coord"][i] < 0:
                             actstring += "-"
 
-                sendData(json.dumps({"command": "SetAction", "name": "Nata", "payload": actstring}))
+                sendData(json.dumps({"command": "SetAction", "name": "RemotePlayer", "payload": actstring}))
 
 
-hunter = NaiveHunterStrategy()
+hunter = RemoteNaiveHunterStrategy()
 
 client = SocketClient("localhost", 42069, hunter.processObservation)
 client.start()
 time.sleep(0.1)
-client.sendData(json.dumps({"command": "SetName", "name": "Nata", "payload": None}))
-# client.sendData(json.dumps({"command": "GameControl", "name": "master", "payload": {"type":"reset", "data":{"mapPath":None, "updateMapPath":None}}}))
+client.sendData(json.dumps({"command": "SetName", "name": "RemotePlayer", "payload": None}))
