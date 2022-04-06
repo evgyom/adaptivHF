@@ -19,7 +19,7 @@ a környezet szabadon átalakítható, viszont a bemutatás egységesen a master
 
 Repository letöltése vagy clonozása.
 
-    git clone www.....
+    git clone https://gitlab.com/microlab1/public-projects/adaptivegame
 
 ### Függőségek
 
