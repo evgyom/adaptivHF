@@ -233,3 +233,7 @@ A Config.py fileban engedélyezhető a logolás. Ebben az esetben a játékmotor
 ## Credits
 Gyöngyössy Natabara (gyongyossy.natabara@mogi.bme.hu) <br>
 Nagy Balázs (nagybalazs@mogi.bme.hu)
+
+## Bug
+
+- scalinget javítani
