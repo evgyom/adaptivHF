@@ -178,8 +178,9 @@ class AdaptIOEngine:
 
     def surveyArea(self, player):
         pos = player.pos
+        leaderBoard = self.getLeaderboard()
         observation = {"pos": pos.tolist(), "tick": self.ticknum, "active": player.active, "size": player.size,
-                       "vision": []}
+                       "vision": [], "leaderBoard":leaderBoard}
         playerpos = [tuple(player.pos) for player in self.players]
         for diffcoord in self.visibilityMask:
             vispos = pos + np.array(diffcoord)

@@ -34,7 +34,9 @@ class RemoteNaiveHunterStrategy:
         'started' type esetén a játék elindul, tickLength-enként kiküldés és akciófogadás várható payload {'tickLength': egy tick hossza }
         'gameData' type esetén az üzenet a játékos által elérhető információkat küldi, a payload:
                                     {"pos": abszolút pozíció a térképen, "tick": az aktuális tick sorszáma, "active": a saját életünk állapota,
-                                    "size": saját méret, "vision": [{"relative_coord": az adott megfigyelt mező relatív koordinátája,
+                                    "size": saját méret,
+                                    "leaderBoard": {'ticks': a játék hossza tickekben eddig, 'players':[{'name': jáétékosnév, 'active': él-e a játékos?, 'maxSize': a legnagyobb elért méret a játék során eddig},...]},
+                                    "vision": [{"relative_coord": az adott megfigyelt mező relatív koordinátája,
                                                                     "value": az adott megfigyelt mező értéke (0-3,9),
                                                                     "player": None, ha nincs aktív játékos, vagy
                                                                             {name: a mezőn álló játékos neve, size: a mezőn álló játékos mérete}},...] }
