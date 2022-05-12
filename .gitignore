@@ -4,3 +4,5 @@
 .idea/
 log/
 ~$*
+notes.md
+src/__pycache__
