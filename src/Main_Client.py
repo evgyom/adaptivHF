@@ -11,16 +11,16 @@ import torch
 from torch import nn
 from torch import optim
 
-TRAIN = True
-PATH = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\2022_05_12_20_44_40.txt"
+TRAIN = False
+PATH = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_4.p"
 
 actions = ["00","0+","0-","+0","+-","++","-0","--","-+"]
-num_episodes= 500
-batch_size= 5
+num_episodes= 2000
+batch_size= 10
 total_end_sizes = []
 
 # NaiveHunter stratégia implementációja távoli eléréshez.
-class RemoteNaiveHunterStrategy:
+class RemoteStrategy:
 
     def __init__(self):
         # Dinamikus viselkedéshez szükséges változók definíciója
@@ -53,12 +53,10 @@ class RemoteNaiveHunterStrategy:
             nn.Linear(128, 32), 
             nn.ReLU(), 
             nn.Linear(32, 9), 
-            nn.Softmax(dim=-1))
+            nn.Softmax(dim=-1))     
 
-        self.optimizer = optim.Adam(self.network.parameters(),lr=0.01)
+        self.optimizer = optim.Adam(self.network.parameters(),lr=0.001)
         
-        #Init weight?
-
     #
     def predict(self, state):
         action_probs = self.network(torch.FloatTensor(state))
@@ -69,7 +67,7 @@ class RemoteNaiveHunterStrategy:
             # Reverse the array direction for cumsum and then
             # revert back to the original order
         r = r[::-1].cumsum()[::-1]
-        return (r - r.mean())
+        return r - r.mean()
 
     def convert_action_string_to_one_hot(self, act_str):
         ret_val = []
@@ -93,20 +91,25 @@ class RemoteNaiveHunterStrategy:
     def processObservation(self, fulljson, sendData):
         # Játék rendezéssel kapcsolatos üzenetek lekezelése
         if fulljson["type"] == "leaderBoard":
-            print("-- Game finished after",fulljson["payload"]["ticks"],"ticks! --")
-            print("Leaderboard:")
+            #print("-- Game finished after",fulljson["payload"]["ticks"],"ticks! --")
+            #print("Leaderboard:")
+
+            self.ep_counter += 1
+           
             for score in fulljson["payload"]["players"]:
-                print(score["name"],score["active"], score["maxSize"])
                 if(score["name"] == "RemotePlayer"):
+                    print("  score:", score["maxSize"])
                     if(score["active"]):
                         total_end_sizes.append(score["maxSize"])
                     else:
-                        total_end_sizes.append(0)
+                        total_end_sizes.append(0)            
+            if(TRAIN):
+                if(self.ep_counter % 20 == 0):
+                    torch.save(self.network.state_dict(), r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\\"+datetime.now().strftime('%Y_%m_%d_%H_%M_%S' + '.p'))
+                    with open("end_sizes.txt","w") as f:
+                        for element in total_end_sizes:
+                            f.write(str(element) + ";")
 
-            self.ep_counter += 1
-            if(self.ep_counter >= num_episodes):
-                sendData(json.dumps({"command": "GameControl", "name": "master","payload": {"type": "interrupt", "data": None}}))
-            else:
                 self.batch_counter += 1
                 self.total_rewards.append(sum(self.rewards))
                 self.batch_rewards.extend(self.discount_rewards(self.rewards))
@@ -119,56 +122,73 @@ class RemoteNaiveHunterStrategy:
                 self.last_action = None
 
                 if(self.batch_counter < batch_size):
-                    with open("end_sizes.txt","w") as f:
-                        for element in total_end_sizes:
-                            f.write(str(element) + ";")
                     time.sleep(0.1)                    
                     sendData(json.dumps({"command": "GameControl", "name": "master",
                                         "payload": {"type": "reset", "data": {"mapPath": None, "updateMapPath": None}}}))            
                 else:
                     self.optimizer.zero_grad()
-                    state_tensor = torch.FloatTensor(self.batch_states)
-                    reward_tensor = torch.FloatTensor(self.batch_rewards)
+                    state_tensor = torch.FloatTensor(np.array(self.batch_states))
+                    reward_tensor = torch.FloatTensor(np.array(self.batch_rewards))
+                    #print("rewards", reward_tensor)
+                    
                     # Actions are used as indices, must be 
                     # LongTensor
                     action_tensor = torch.LongTensor(self.batch_actions)
-                    #print("action tensor:", action_tensor)
-                    logprob = torch.log(self.predict(state_tensor))
-                    #print("logprob:",logprob)
-                    selected_logprobs = reward_tensor * torch.sum(logprob * action_tensor,dim = 1)
-                    #print("selected logprobs:",selected_logprobs)
-                    loss = -selected_logprobs.mean()
-                    print("Loss:", loss.item())
+                    #print("action tensor", action_tensor)
+                    pred = self.predict(state_tensor)
+                    #print("preds", pred)
+                    selected_preds = torch.sum(pred * action_tensor,dim = 1)
+                    #print("selected_preds", selected_preds)
+                    selected_logprobs = reward_tensor*torch.log(selected_preds)
+                    #print("selected_logprobs", selected_logprobs)
+                    loss = -selected_logprobs.sum()
+                    print(self.ep_counter,"--- Loss:", loss.item())
 
                     # Calculate gradients
                     loss.backward()
+
+                    grads = []
+                    for param in self.network.parameters():
+                        grads.append(param.grad)
+
                     # Apply gradients
                     self.optimizer.step()
 
-                    torch.save(self.network.state_dict(), r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\\"+datetime.now().strftime('%Y_%m_%d_%H_%M_%S' + '.txt'))
-                    
                     self.batch_rewards = []
                     self.batch_actions = []
                     self.batch_states = []
                     self.batch_counter = 0
 
+                    if(self.ep_counter >= num_episodes):
+                        sendData(json.dumps({"command": "GameControl", "name": "master","payload": {"type": "interrupt", "data": None}}))
+                        #Save the last model as well
+                        torch.save(self.network.state_dict(), r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\\"+datetime.now().strftime('%Y_%m_%d_%H_%M_%S' + '.p'))
+                        with open("end_sizes.txt","w") as f:
+                            for element in total_end_sizes:
+                                f.write(str(element) + ";")
+                    else:
+                        sendData(json.dumps({"command": "GameControl", "name": "master",
+                                        "payload": {"type": "reset", "data": {"mapPath": None, "updateMapPath": None}}}))
+            else:
+                if(self.ep_counter >= num_episodes):
+                    time.sleep(0.1)
+                    sendData(json.dumps({"command": "GameControl", "name": "master","payload": {"type": "interrupt", "data": None}}))
+                else:
+                    time.sleep(0.1)
                     sendData(json.dumps({"command": "GameControl", "name": "master",
                                         "payload": {"type": "reset", "data": {"mapPath": None, "updateMapPath": None}}}))
 
-
         if fulljson["type"] == "readyToStart":
-            print("----", self.ep_counter,"episode -----")
-            print("Game is ready, starting in 5")
-            time.sleep(5)
+            time.sleep(0.1)
             sendData(json.dumps({"command": "GameControl", "name": "master",
                                  "payload": {"type": "start", "data": None}}))
 
         if fulljson["type"] == "started":
-            print("Startup message from server.")
-            print("Ticks interval is:",fulljson["payload"]["tickLength"])
+            pass
+            #print("Startup message from server.")
+            #print("Ticks interval is:",fulljson["payload"]["tickLength"])
 
-
-        # Akció előállítása bemenetek alapján (egyezik a NaiveHunterBot-okéval)
+        # Akció előállítása bemenetek alapján
         elif fulljson["type"] == "gameData":
             jsonData = fulljson["payload"]
             if "pos" in jsonData.keys() and "tick" in jsonData.keys() and "active" in jsonData.keys() and "size" in jsonData.keys() and "vision" in jsonData.keys():
@@ -177,8 +197,7 @@ class RemoteNaiveHunterStrategy:
                         self.oldcounter += 1
                     else:
                         self.oldcounter = 0
-                if jsonData["active"]:
-                    self.oldpos = jsonData["pos"].copy()
+                
 
                 vals = []
                 for field in jsonData["vision"]:
@@ -204,27 +223,39 @@ class RemoteNaiveHunterStrategy:
                 
                 #Vision
                 state = np.array(vals)
-
-                #Calculate reward for last action
-                reward = 0
-                if(not jsonData["active"]):
-                    reward = -99
-                else:
-                    reward = jsonData["size"] - self.oldsize
-
-                if(self.last_action != None):
-                    self.states.append(self.last_state)
-                    self.rewards.append(reward)
-                    self.actions.append(self.convert_action_string_to_one_hot(self.last_action))
-
                 pred = self.predict(state).detach().numpy()
+                
                 if(TRAIN):
+                    #Calculate reward for last action
+                    reward = 0
+                    if(not jsonData["active"]):
+                        reward = -99
+                    else:
+                        reward = jsonData["size"] - self.oldsize
+
+                    if jsonData["active"]:
+                        if(self.oldpos != jsonData["pos"]):
+                            reward+=0.1
+                        self.oldpos = jsonData["pos"].copy()
+                    
+
+                    #print("last_action:", self.last_action, "reward:", reward)
+
+                    #Store the training data
+                    if(self.last_action != None):
+                        self.states.append(self.last_state)
+                        self.rewards.append(reward)
+                        self.actions.append(self.convert_action_string_to_one_hot(self.last_action))
+
                     actstring = choice(actions, 1, p=pred/np.sum(pred))[0]
                     self.last_state = state
                     self.last_action = actstring
                     self.oldsize = jsonData["size"]
                 else:
-                    pass
+                    print(pred)
+                    #actstring = actions[np.argmax(pred)]
+                    actstring = choice(actions, 1, p=pred/np.sum(pred))[0]
+                    print(actstring)
 
                 # Akció JSON előállítása és elküldése
                 sendData(json.dumps({"command": "SetAction", "name": "RemotePlayer", "payload": actstring}))
@@ -232,9 +263,10 @@ class RemoteNaiveHunterStrategy:
 
 if __name__=="__main__":
     # Példányosított stratégia objektum
-    hunter = RemoteNaiveHunterStrategy()
+    hunter = RemoteStrategy()
     try:
         hunter.network.load_state_dict(torch.load(PATH))
+        print("loaded model")
     except:
         pass
     hunter.network.train()
