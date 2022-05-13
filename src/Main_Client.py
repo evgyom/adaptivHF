@@ -1,10 +1,23 @@
 #encoding: utf-8
+from datetime import datetime
 
 import time
 from Client import SocketClient
 import json
 import numpy as np
+from numpy.random import choice
 
+import torch
+from torch import nn
+from torch import optim
+
+TRAIN = True
+PATH = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\2022_05_12_20_44_40.txt"
+
+actions = ["00","0+","0-","+0","+-","++","-0","--","-+"]
+num_episodes= 500
+batch_size= 5
+total_end_sizes = []
 
 # NaiveHunter stratégia implementációja távoli eléréshez.
 class RemoteNaiveHunterStrategy:
@@ -13,6 +26,59 @@ class RemoteNaiveHunterStrategy:
         # Dinamikus viselkedéshez szükséges változók definíciója
         self.oldpos = None
         self.oldcounter = 0
+        # Game params
+        self.oldsize = 5
+        self.last_action = None
+        self.last_state = None
+
+        self.total_rewards = []
+        self.batch_rewards = []
+        self.batch_actions = []
+        self.batch_states = []
+
+        self.states = []
+        self.rewards = []
+        self.actions = []
+
+        self.batch_counter = 0
+        self.ep_counter = 1
+
+        self.network = nn.Sequential(
+            nn.Linear(81, 256), 
+            nn.ReLU(),
+            nn.Linear(256, 256), 
+            nn.ReLU(), 
+            nn.Linear(256, 128), 
+            nn.ReLU(), 
+            nn.Linear(128, 32), 
+            nn.ReLU(), 
+            nn.Linear(32, 9), 
+            nn.Softmax(dim=-1))
+
+        self.optimizer = optim.Adam(self.network.parameters(),lr=0.01)
+        
+        #Init weight?
+
+    #
+    def predict(self, state):
+        action_probs = self.network(torch.FloatTensor(state))
+        return action_probs
+
+    def discount_rewards(self, rewards_in, gamma=0.99):
+        r = np.array([gamma**i * rewards_in[i] for i in range(len(rewards_in))])
+            # Reverse the array direction for cumsum and then
+            # revert back to the original order
+        r = r[::-1].cumsum()[::-1]
+        return (r - r.mean())
+
+    def convert_action_string_to_one_hot(self, act_str):
+        ret_val = []
+        for act in actions:
+            if(act == act_str):
+                ret_val.append(1)
+            else:
+                ret_val.append(0)
+        return ret_val
 
     # Egyéb függvények...
     def getRandomAction(self):
@@ -21,56 +87,77 @@ class RemoteNaiveHunterStrategy:
         action = ""
         for act in r:
             action += actdict[act]
-
         return action
 
     # Az egyetlen kötelező elem: A játékmestertől jövő információt feldolgozó és választ elküldő függvény
     def processObservation(self, fulljson, sendData):
-        """
-        :param fulljson: A játékmestertől érkező JSON dict-be konvertálva.
-        Két kötelező kulccsal: 'type' (leaderBoard, readyToStart, started, gameData, serverClose) és 'payload' (az üzenet adatrésze).
-        'leaderBoard' type a játék végét jelzi, a payload tartalma {'ticks': a játék hossza tickekben, 'players':[{'name': jáétékosnév, 'active': él-e a játékos?, 'maxSize': a legnagyobb elért méret a játék során},...]}
-        'readyToStart' type esetén a szerver az indító üzenetre vár esetén, a payload üres (None)
-        'started' type esetén a játék elindul, tickLength-enként kiküldés és akciófogadás várható payload {'tickLength': egy tick hossza }
-        'gameData' type esetén az üzenet a játékos által elérhető információkat küldi, a payload:
-                                    {"pos": abszolút pozíció a térképen, "tick": az aktuális tick sorszáma, "active": a saját életünk állapota,
-                                    "size": saját méret,
-                                    "leaderBoard": {'ticks': a játék hossza tickekben eddig, 'players':[{'name': jáétékosnév, 'active': él-e a játékos?, 'maxSize': a legnagyobb elért méret a játék során eddig},...]},
-                                    "vision": [{"relative_coord": az adott megfigyelt mező relatív koordinátája,
-                                                                    "value": az adott megfigyelt mező értéke (0-3,9),
-                                                                    "player": None, ha nincs aktív játékos, vagy
-                                                                            {name: a mezőn álló játékos neve, size: a mezőn álló játékos mérete}},...] }
-        'serverClose' type esetén a játékmester szabályos, vagy hiba okozta bezáródásáról értesülünk, a payload üres (None)
-        :param sendData: A kliens adatküldő függvénye, JSON formátumú str bemenetet vár, melyet a játékmester felé továbbít.
-        Az elküldött adat struktúrája {"command": Parancs típusa, "name": A küldő azonosítója, "payload": az üzenet adatrésze}
-        Elérhető parancsok:
-        'SetName' A kliens felregisztrálja a saját nevét a szervernek, enélkül a nevünkhöz tartozó üzenetek nem térnek vissza.
-                 Tiltott nevek: a configban megadott játékmester név és az 'all'.
-        'SetAction' Ebben az esetben a payload az akció string, amely két karaktert tartalmaz az X és az Y koordináták (matematikai mátrix indexelés) menti elmozdulásra.
-                a karakterek értékei '0': helybenmaradás az adott tengely mentén, '+' pozitív irányú lépés, '-' negatív irányú lépés lehet. Amennyiben egy tick ideje alatt
-                nem külünk értéket az alapértelmezett '00' kerül végrehajtásra.
-        'GameControl' üzeneteket csak a Config.py-ban megadott játékmester névvel lehet küldeni, ezek a játékmenetet befolyásoló üzenetek.
-                A payload az üzenet típusát (type), valamint az ahhoz tartozó 'data' adatokat kell, hogy tartalmazza.
-                    'start' type elindítja a játékot egy "readyToStart" üzenetet küldött játék esetén, 'data' mezője üres (None)
-                    'reset' type egy játék után várakozó 'leaderBoard'-ot küldött játékot állít alaphelyzetbe. A 'data' mező
-                            {'mapPath':None, vagy elérési útvonal, 'updateMapPath': None, vagy elérési útvonal} formátumú, ahol None
-                            esetén az előző pálya és növekedési map kerül megtartásra, míg elérési útvonal megadása esetén új pálya kerül betöltésre annak megfelelően.
-                    'interrupt' type esetén a 'data' mező üres (None), ez megszakítja a szerver futását és szabályosan leállítja azt.
-        :return:
-        """
-
         # Játék rendezéssel kapcsolatos üzenetek lekezelése
         if fulljson["type"] == "leaderBoard":
-            print("Game finished after",fulljson["payload"]["ticks"],"ticks!")
+            print("-- Game finished after",fulljson["payload"]["ticks"],"ticks! --")
             print("Leaderboard:")
             for score in fulljson["payload"]["players"]:
                 print(score["name"],score["active"], score["maxSize"])
+                if(score["name"] == "RemotePlayer"):
+                    if(score["active"]):
+                        total_end_sizes.append(score["maxSize"])
+                    else:
+                        total_end_sizes.append(0)
 
-            time.sleep(50)
-            sendData(json.dumps({"command": "GameControl", "name": "master",
-                                 "payload": {"type": "reset", "data": {"mapPath": None, "updateMapPath": None}}}))
+            self.ep_counter += 1
+            if(self.ep_counter >= num_episodes):
+                sendData(json.dumps({"command": "GameControl", "name": "master","payload": {"type": "interrupt", "data": None}}))
+            else:
+                self.batch_counter += 1
+                self.total_rewards.append(sum(self.rewards))
+                self.batch_rewards.extend(self.discount_rewards(self.rewards))
+                self.batch_states.extend(self.states)
+                self.batch_actions.extend(self.actions)
+                #Clear
+                self.states = []
+                self.rewards = []
+                self.actions = []
+                self.last_action = None
+
+                if(self.batch_counter < batch_size):
+                    with open("end_sizes.txt","w") as f:
+                        for element in total_end_sizes:
+                            f.write(str(element) + ";")
+                    time.sleep(0.1)                    
+                    sendData(json.dumps({"command": "GameControl", "name": "master",
+                                        "payload": {"type": "reset", "data": {"mapPath": None, "updateMapPath": None}}}))            
+                else:
+                    self.optimizer.zero_grad()
+                    state_tensor = torch.FloatTensor(self.batch_states)
+                    reward_tensor = torch.FloatTensor(self.batch_rewards)
+                    # Actions are used as indices, must be 
+                    # LongTensor
+                    action_tensor = torch.LongTensor(self.batch_actions)
+                    #print("action tensor:", action_tensor)
+                    logprob = torch.log(self.predict(state_tensor))
+                    #print("logprob:",logprob)
+                    selected_logprobs = reward_tensor * torch.sum(logprob * action_tensor,dim = 1)
+                    #print("selected logprobs:",selected_logprobs)
+                    loss = -selected_logprobs.mean()
+                    print("Loss:", loss.item())
+
+                    # Calculate gradients
+                    loss.backward()
+                    # Apply gradients
+                    self.optimizer.step()
+
+                    torch.save(self.network.state_dict(), r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\\"+datetime.now().strftime('%Y_%m_%d_%H_%M_%S' + '.txt'))
+                    
+                    self.batch_rewards = []
+                    self.batch_actions = []
+                    self.batch_states = []
+                    self.batch_counter = 0
+
+                    sendData(json.dumps({"command": "GameControl", "name": "master",
+                                        "payload": {"type": "reset", "data": {"mapPath": None, "updateMapPath": None}}}))
+
 
         if fulljson["type"] == "readyToStart":
+            print("----", self.ep_counter,"episode -----")
             print("Game is ready, starting in 5")
             time.sleep(5)
             sendData(json.dumps({"command": "GameControl", "name": "master",
@@ -106,7 +193,7 @@ class RemoteNaiveHunterStrategy:
                         elif field["player"]["size"] * 1.1 < jsonData["size"]:
                             vals.append(field["player"]["size"])
                         else:
-                            vals.append(-1)
+                            vals.append(-1*field["player"]["size"])
                     else:
                         if 0 < field["value"] <= 3:
                             vals.append(field["value"])
@@ -114,31 +201,43 @@ class RemoteNaiveHunterStrategy:
                             vals.append(-1)
                         else:
                             vals.append(0)
+                
+                #Vision
+                state = np.array(vals)
 
-                values = np.array(vals)
-
-                if np.max(values) <= 0 or self.oldcounter >= 3:
-                    actstring = self.getRandomAction()
-                    self.oldcounter = 0
+                #Calculate reward for last action
+                reward = 0
+                if(not jsonData["active"]):
+                    reward = -99
                 else:
-                    idx = np.argmax(values)
-                    actstring = ""
-                    for i in range(2):
-                        if jsonData["vision"][idx]["relative_coord"][i] == 0:
-                            actstring += "0"
-                        elif jsonData["vision"][idx]["relative_coord"][i] > 0:
-                            actstring += "+"
-                        elif jsonData["vision"][idx]["relative_coord"][i] < 0:
-                            actstring += "-"
+                    reward = jsonData["size"] - self.oldsize
+
+                if(self.last_action != None):
+                    self.states.append(self.last_state)
+                    self.rewards.append(reward)
+                    self.actions.append(self.convert_action_string_to_one_hot(self.last_action))
+
+                pred = self.predict(state).detach().numpy()
+                if(TRAIN):
+                    actstring = choice(actions, 1, p=pred/np.sum(pred))[0]
+                    self.last_state = state
+                    self.last_action = actstring
+                    self.oldsize = jsonData["size"]
+                else:
+                    pass
 
                 # Akció JSON előállítása és elküldése
                 sendData(json.dumps({"command": "SetAction", "name": "RemotePlayer", "payload": actstring}))
 
 
-
 if __name__=="__main__":
     # Példányosított stratégia objektum
     hunter = RemoteNaiveHunterStrategy()
+    try:
+        hunter.network.load_state_dict(torch.load(PATH))
+    except:
+        pass
+    hunter.network.train()
 
     # Socket kliens, melynek a szerver címét kell megadni (IP, port), illetve a callback függvényt, melynek szignatúrája a fenti
     # callback(fulljson, sendData)
