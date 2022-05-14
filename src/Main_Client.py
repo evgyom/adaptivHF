@@ -11,29 +11,35 @@ import torch
 from torch import nn
 from torch import optim
 
-TRAIN = True
 ACTIONS = ["00","0-","0+","+0","+-","++","-0","--","-+"]
-num_episodes= 1000
+
+TRAIN = False
+VER = 11
+PATH_SIZES = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_sizes"
+PATH_REWARDS = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_rewards"
+num_episodes= 10000
 batch_size= 10
-total_end_sizes = []
+learning_rate = 1e-3
 
 class RemoteStrategy:
 
     def __init__(self):
         # Dinamikus viselkedéshez szükséges változók definíciója
         self.oldpos = None
+        self.all_positions = []
         self.oldcounter = 0
-
-        # Game params
         self.oldsize = 5
         self.last_action = None
         self.last_state = None
 
+        # Data for validation
         self.total_rewards = []
+        self.total_end_sizes = []
+
+        #Training data 
         self.batch_rewards = []
         self.batch_actions = []
         self.batch_states = []
-
         self.states = []
         self.rewards = []
         self.actions = []
@@ -51,7 +57,7 @@ class RemoteStrategy:
             nn.Linear(32, 9), 
             nn.Softmax(dim=-1))     
 
-        self.optimizer = optim.Adam(self.network.parameters(),lr=1e-4)
+        self.optimizer = optim.Adam(self.network.parameters(),lr=learning_rate)
         
     # Perform prediction based on agent state
     def predict(self, state):
@@ -111,8 +117,13 @@ class RemoteStrategy:
         else:
             reward = jsonData["size"] - self.oldsize
             if(self.oldpos != jsonData["pos"]):
-                reward+=0.1   
-        return reward
+                reward+=0.05
+        # Reward based on the position
+        pos_reward = 0
+        if(len(self.all_positions)>20):
+            pos_reward = 0.05 * np.sum(np.abs(np.mean(self.all_positions[-20:]) - self.all_positions[-20]))
+        print("reward + pos_reward:",reward, "+", pos_reward)
+        return reward+pos_reward
 
     # Do one training step
     def train_step(self):
@@ -146,6 +157,18 @@ class RemoteStrategy:
     def interrupt_game(self, sendDataFunc):
         sendDataFunc(json.dumps({"command": "GameControl", "name": "master","payload": {"type": "interrupt", "data": None}}))
 
+    # Save all the past max sizes
+    def save_scores(self, path):
+        with open(path, 'w') as f:
+            for elem in self.total_end_sizes:
+                f.write(str(elem)+"\n")
+
+    # Save all the past rewards
+    def save_total_reward(self, path):
+        with open(path, 'w') as f:
+            for elem in self.total_rewards:
+                f.write(str(elem)+"\n")
+
     # Process the received data
     def processObservation(self, fulljson, sendData):
 
@@ -153,17 +176,21 @@ class RemoteStrategy:
         if fulljson["type"] == "leaderBoard":
             self.ep_counter += 1
            
+           # Print and store the maximum size of our player
             for score in fulljson["payload"]["players"]:
                 if(score["name"] == "RemotePlayer"):
-                    print("  score:", score["maxSize"])
                     if(score["active"]):
-                        total_end_sizes.append(score["maxSize"])
+                        self.total_end_sizes.append(score["maxSize"])
+                        print("  score:", score["maxSize"])
                     else:
-                        total_end_sizes.append(0)            
+                        self.total_end_sizes.append(0)      
+                        print("  died at:", score["maxSize"])      
             if(TRAIN):
                 if(self.ep_counter % 100 == 0):
                     #Save model
                     self.save_model()
+                    self.save_scores(path = PATH_SIZES+"/v"+str(VER)+".txt")
+                    self.save_total_reward(path=PATH_REWARDS+"/v"+str(VER)+".txt")
 
                 # Add to batch data
                 self.batch_counter += 1
@@ -207,7 +234,7 @@ class RemoteStrategy:
 
         # Start game
         if fulljson["type"] == "readyToStart":
-            time.sleep(0.01)
+            time.sleep(0.001)
             sendData(json.dumps({"command": "GameControl", "name": "master",
                                  "payload": {"type": "start", "data": None}}))
 
@@ -221,6 +248,8 @@ class RemoteStrategy:
                 pred = self.predict(state).detach().numpy()
                 
                 if(TRAIN):
+                    # Append to the position array
+                    self.all_positions.append(jsonData["pos"])
                     #Calculate the rewards
                     reward = self.calculate_reward(jsonData)
                     #Store the training data
@@ -249,7 +278,7 @@ if __name__=="__main__":
     # Példányosított stratégia objektum
     hunter = RemoteStrategy()
     try:
-        hunter.network.load_state_dict(torch.load(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_5___.p"))
+        hunter.network.load_state_dict(torch.load(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_9.p"))
         print("model loaded")
     except:
         print("model not found")

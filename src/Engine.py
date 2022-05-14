@@ -305,7 +305,8 @@ class AdaptIOEngine:
         newpos = self.checkCollision(newpos, pos)
         self.updatePlayers(newpos)
         self.updateFood()
-        self.writeLog(self.ticknum, actions, self.field, self.players)
+        if(self.log):
+            self.writeLog(self.ticknum, actions, self.field, self.players)
         self.ticknum += 1
         self.sendObservations()
 
