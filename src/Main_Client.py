@@ -17,8 +17,8 @@ TRAIN = False
 VER = 11
 PATH_SIZES = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_sizes"
 PATH_REWARDS = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_rewards"
-num_episodes= 10000
-batch_size= 10
+num_episodes = 10000
+batch_size = 10
 learning_rate = 1e-3
 
 class RemoteStrategy:
@@ -31,6 +31,7 @@ class RemoteStrategy:
         self.oldsize = 5
         self.last_action = None
         self.last_state = None
+        self.old_active = True
 
         # Data for validation
         self.total_rewards = []
@@ -84,7 +85,7 @@ class RemoteStrategy:
         return ret_val
 
     # Get the state based on the JSON input
-    def getState(self, jsonData):
+    def get_state(self, jsonData):
         vals = []
         for field in jsonData["vision"]:
             if field["player"] is not None:
@@ -96,8 +97,13 @@ class RemoteStrategy:
                     else:
                         vals.append(0)
                 elif field["player"]["size"] * 1.1 < jsonData["size"]:
+                    # Smaller player -> big food
                     vals.append(field["player"]["size"])
+                elif field["player"]["size"] * 1.1 >= jsonData["size"] or field["player"]["size"] / 1.1 <= jsonData["size"]:
+                    # Similar sized player -> wall
+                    vals.append(-1)
                 else:
+                    # Big player -> danger
                     vals.append(-1*field["player"]["size"])
             else:
                 if 0 < field["value"] <= 3:
@@ -109,7 +115,7 @@ class RemoteStrategy:
         return np.array(vals)
 
     # Calculate the reward
-    def calculate_reward(self, jsonData):
+    def calculate_reward(self, jsonData, past_win = 10):
         #Calculate reward for last action
         reward = 0
         if(not jsonData["active"]):
@@ -120,9 +126,9 @@ class RemoteStrategy:
                 reward+=0.05
         # Reward based on the position
         pos_reward = 0
-        if(len(self.all_positions)>20):
-            pos_reward = 0.05 * np.sum(np.abs(np.mean(self.all_positions[-20:]) - self.all_positions[-20]))
-        print("reward + pos_reward:",reward, "+", pos_reward)
+        if(len(self.all_positions)>past_win):
+            pos_reward = 0.01 * np.sum(np.abs(np.mean(self.all_positions[-past_win:],0) - self.all_positions[-past_win]))       
+        #print("reward + pos_reward:",reward, "+", pos_reward)
         return reward+pos_reward
 
     # Do one training step
@@ -186,7 +192,7 @@ class RemoteStrategy:
                         self.total_end_sizes.append(0)      
                         print("  died at:", score["maxSize"])      
             if(TRAIN):
-                if(self.ep_counter % 100 == 0):
+                if(self.ep_counter % 50 == 0):
                     #Save model
                     self.save_model()
                     self.save_scores(path = PATH_SIZES+"/v"+str(VER)+".txt")
@@ -242,37 +248,38 @@ class RemoteStrategy:
         elif fulljson["type"] == "gameData":
             jsonData = fulljson["payload"]
             if "pos" in jsonData.keys() and "tick" in jsonData.keys() and "active" in jsonData.keys() and "size" in jsonData.keys() and "vision" in jsonData.keys():              
-                # Get the state based on the JsonData
-                state = self.getState(jsonData)
-                # Predict the actions
-                pred = self.predict(state).detach().numpy()
-                
-                if(TRAIN):
-                    # Append to the position array
-                    self.all_positions.append(jsonData["pos"])
-                    #Calculate the rewards
-                    reward = self.calculate_reward(jsonData)
-                    #Store the training data
-                    if(self.last_action != None):
-                        self.states.append(self.last_state)
-                        self.rewards.append(reward)
-                        self.actions.append(self.convert_action_string_to_one_hot(self.last_action))
-                    # Select action
-                    actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
-                    # Update old status values
-                    self.last_state = state
-                    self.last_action = actstring
-                    self.oldsize = jsonData["size"]
-                    self.oldpos = jsonData["pos"].copy()
-                else:
-                    print(pred)
-                    #actstring = actions[np.argmax(pred)]
-                    actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
-                    print(actstring)
-
-                # Akció JSON előállítása és elküldése
-                sendData(json.dumps({"command": "SetAction", "name": "RemotePlayer", "payload": actstring}))
-
+                if(jsonData["active"]):
+                    # Get the state based on the JsonData
+                    state = self.get_state(jsonData)
+                    if(len(state) != 82):
+                        with open(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\error_log.json", 'w') as f:
+                            json.dump(jsonData, f)
+                    # Predict the actions
+                    pred = self.predict(state).detach().numpy()
+                    if(TRAIN):
+                        # Append to the position array
+                        self.all_positions.append(jsonData["pos"])
+                        #Calculate the rewards
+                        reward = self.calculate_reward(jsonData)
+                        #Store the training data
+                        if(self.last_action != None):
+                            self.states.append(self.last_state)
+                            self.rewards.append(reward)
+                            self.actions.append(self.convert_action_string_to_one_hot(self.last_action))
+                        # Select action
+                        actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
+                        # Update old status values
+                        self.last_state = state
+                        self.last_action = actstring
+                        self.oldsize = jsonData["size"]
+                        self.oldpos = jsonData["pos"].copy()
+                    else:
+                        print(pred)
+                        #actstring = actions[np.argmax(pred)]
+                        actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
+                        print(actstring)
+                    # Akció JSON előállítása és elküldése
+                    sendData(json.dumps({"command": "SetAction", "name": "RemotePlayer", "payload": actstring}))
 
 if __name__=="__main__":
     # Példányosított stratégia objektum

@@ -4,5 +4,9 @@
 .idea/
 log/
 ~$*
+
+# My ignored files
 notes.md
 src/__pycache__
+/models
+end_sizes.txt
