@@ -14,10 +14,10 @@ from torch import optim
 ACTIONS = ["00","0-","0+","+0","+-","++","-0","--","-+"]
 
 TRAIN = False
-VER = 11
+VER = 14
 PATH_SIZES = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_sizes"
 PATH_REWARDS = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_rewards"
-num_episodes = 10000
+num_episodes = 30
 batch_size = 10
 learning_rate = 1e-3
 
@@ -234,6 +234,9 @@ class RemoteStrategy:
                 if(self.ep_counter >= num_episodes):
                     time.sleep(0.1)
                     self.interrupt_game(sendData)
+                    print("Sizes", self.total_end_sizes)
+                    print("Average size:", np.mean(self.total_end_sizes))
+                    print("Max size:", max(self.total_end_sizes))
                 else:
                     time.sleep(0.1)
                     self.reset_game(sendData)
@@ -248,44 +251,45 @@ class RemoteStrategy:
         elif fulljson["type"] == "gameData":
             jsonData = fulljson["payload"]
             if "pos" in jsonData.keys() and "tick" in jsonData.keys() and "active" in jsonData.keys() and "size" in jsonData.keys() and "vision" in jsonData.keys():              
-                if(jsonData["active"]):
-                    # Get the state based on the JsonData
-                    state = self.get_state(jsonData)
-                    if(len(state) != 82):
-                        with open(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\error_log.json", 'w') as f:
-                            json.dump(jsonData, f)
-                    # Predict the actions
-                    pred = self.predict(state).detach().numpy()
-                    if(TRAIN):
-                        # Append to the position array
-                        self.all_positions.append(jsonData["pos"])
-                        #Calculate the rewards
-                        reward = self.calculate_reward(jsonData)
-                        #Store the training data
-                        if(self.last_action != None):
-                            self.states.append(self.last_state)
-                            self.rewards.append(reward)
-                            self.actions.append(self.convert_action_string_to_one_hot(self.last_action))
-                        # Select action
-                        actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
-                        # Update old status values
-                        self.last_state = state
-                        self.last_action = actstring
-                        self.oldsize = jsonData["size"]
-                        self.oldpos = jsonData["pos"].copy()
-                    else:
-                        print(pred)
-                        #actstring = actions[np.argmax(pred)]
-                        actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
-                        print(actstring)
-                    # Akció JSON előállítása és elküldése
-                    sendData(json.dumps({"command": "SetAction", "name": "RemotePlayer", "payload": actstring}))
+                
+                # Get the state based on the JsonData
+                state = self.get_state(jsonData)
+                if(len(state) != 82):
+                    with open(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\error_log.json", 'w') as f:
+                        json.dump(jsonData, f)
+                # Predict the actions
+                pred = self.predict(state).detach().numpy()
+                if(TRAIN):
+                    # Append to the position array
+                    self.all_positions.append(jsonData["pos"])
+                    #Calculate the rewards
+                    reward = self.calculate_reward(jsonData)
+                    #Store the training data
+                    if(self.last_action != None and self.old_active):
+                        self.states.append(self.last_state)
+                        self.rewards.append(reward)
+                        self.actions.append(self.convert_action_string_to_one_hot(self.last_action))
+                    # Select action
+                    actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
+                    # Update old status values
+                    self.last_state = state
+                    self.last_action = actstring
+                    self.oldsize = jsonData["size"]
+                    self.oldpos = jsonData["pos"].copy()
+                    self.old_active = jsonData["active"]
+                else:
+                    print(pred)
+                    #actstring = actions[np.argmax(pred)]
+                    actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
+                    print(actstring)
+                # Akció JSON előállítása és elküldése
+                sendData(json.dumps({"command": "SetAction", "name": "RemotePlayer", "payload": actstring}))
 
 if __name__=="__main__":
     # Példányosított stratégia objektum
     hunter = RemoteStrategy()
     try:
-        hunter.network.load_state_dict(torch.load(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_9.p"))
+        hunter.network.load_state_dict(torch.load(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_13.p"))
         print("model loaded")
     except:
         print("model not found")

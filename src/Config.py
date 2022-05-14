@@ -9,7 +9,7 @@ LOG = False
 LOG_PATH = './log'
 
 # Engine
-MAPPATH          = "./maps/04_mirror.txt"
+MAPPATH          = "./maps/02_base.txt"
 FIELDUPDATE_PATH = "./fieldupdate/03_midlane.txt"
 STARTING_SIZE    = 5
 MIN_RATIO        = 1.1
