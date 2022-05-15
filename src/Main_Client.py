@@ -12,12 +12,14 @@ from torch import nn
 from torch import optim
 
 ACTIONS = ["00","0-","0+","+0","+-","++","-0","--","-+"]
+base_path  = r"C:/Users/Misi/01_SULI/02_10_felev_MSC_2/09_adaptiv/adapt_hf/adaptivegame/src/maps/"
+MAPS = ["02_base.txt", "03_blockade.txt", "04_mirror.txt"]
 
-TRAIN = False
+TRAIN = True
 VER = 14
 PATH_SIZES = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_sizes"
 PATH_REWARDS = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_rewards"
-num_episodes = 30
+num_episodes = 100
 batch_size = 10
 learning_rate = 1e-3
 
@@ -32,6 +34,8 @@ class RemoteStrategy:
         self.last_action = None
         self.last_state = None
         self.old_active = True
+
+        self.last_map = "02_base.txt"
 
         # Data for validation
         self.total_rewards = []
@@ -155,9 +159,9 @@ class RemoteStrategy:
         torch.save(self.network.state_dict(), r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\\"+datetime.now().strftime('%Y_%m_%d_%H_%M_%S' + '.p'))
 
     # Send reset game message
-    def reset_game(self, sendDataFunc):
+    def reset_game(self, sendDataFunc, next_map_path):
         sendDataFunc(json.dumps({"command": "GameControl", "name": "master",
-                                        "payload": {"type": "reset", "data": {"mapPath": None, "updateMapPath": None}}}))
+                                        "payload": {"type": "reset", "data": {"mapPath": str(base_path) + str(next_map_path[0]), "updateMapPath": None}}}))
 
     # Send interrupt game message
     def interrupt_game(self, sendDataFunc):
@@ -187,10 +191,10 @@ class RemoteStrategy:
                 if(score["name"] == "RemotePlayer"):
                     if(score["active"]):
                         self.total_end_sizes.append(score["maxSize"])
-                        print("  score:", score["maxSize"])
+                        print("  score:", score["maxSize"], "map:", self.last_map[0].replace(".txt",""))
                     else:
                         self.total_end_sizes.append(0)      
-                        print("  died at:", score["maxSize"])      
+                        print("  died at:", score["maxSize"], "map:", self.last_map[0].replace(".txt",""))     
             if(TRAIN):
                 if(self.ep_counter % 50 == 0):
                     #Save model
@@ -212,8 +216,10 @@ class RemoteStrategy:
                 self.last_action = None
 
                 if(self.batch_counter < batch_size):
-                    time.sleep(0.1)                    
-                    self.reset_game(sendData)            
+                    time.sleep(0.01)                    
+                    next_map = choice(MAPS, 1)
+                    self.reset_game(sendData, next_map)
+                    self.last_map = next_map            
                 else:
                     self.train_step()
 
@@ -228,7 +234,9 @@ class RemoteStrategy:
                         #Save the last model
                         self.save_model()
                     else:
-                        self.reset_game(sendData)            
+                        next_map = choice(MAPS, 1)
+                        self.reset_game(sendData, next_map)
+                        self.last_map = next_map       
             else:
                 # In eval mode
                 if(self.ep_counter >= num_episodes):
@@ -239,7 +247,9 @@ class RemoteStrategy:
                     print("Max size:", max(self.total_end_sizes))
                 else:
                     time.sleep(0.1)
-                    self.reset_game(sendData)
+                    next_map = choice(MAPS, 1)
+                    self.reset_game(sendData, next_map)
+                    self.last_map = next_map  
 
         # Start game
         if fulljson["type"] == "readyToStart":
