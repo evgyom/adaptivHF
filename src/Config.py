@@ -2,25 +2,25 @@
 GAMEMASTER_NAME = "master"
 IP = "localhost"
 PORT = 42069
-DEFAULT_TICK_LENGTH_S = 0.000001
-DISPLAY_ON = False
+DEFAULT_TICK_LENGTH_S = 0.5 #000001
+DISPLAY_ON = True
 WAIT_FOR_JOIN = 20
 LOG = False
 LOG_PATH = './log'
 
 # Engine
-MAPPATH          = "./maps/02_base.txt"
+MAPPATH          = "./maps/04_mirror.txt"
 FIELDUPDATE_PATH = "./fieldupdate/03_midlane.txt"
 STARTING_SIZE    = 5
 MIN_RATIO        = 1.1
-STRATEGY_DICT    = {"RemotePlayer": "remoteplayer", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "naivehunterbot"}
+STRATEGY_DICT    = {"RemotePlayer": "remoteplayer", "Teszt2": "naivehunterbot", "Teszt3": "naivehunterbot", "Teszt4": "advanced"}
 VISION_RANGE     = 5
 UPDATE_MODE      = "statistical" #static
 DIFF_FROM_SIDE   = 1
 FOODGEN_COOLDOWN = 10
 FOODGEN_OFFSET   = 10
 FOODGEN_SCALER   = 0.05
-MAXTICKS         = 200
+MAXTICKS         = 100
 SOLO_ENABLED     = True
 
 #GUI

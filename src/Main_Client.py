@@ -16,10 +16,10 @@ base_path  = r"C:/Users/Misi/01_SULI/02_10_felev_MSC_2/09_adaptiv/adapt_hf/adapt
 MAPS = ["02_base.txt", "03_blockade.txt", "04_mirror.txt"]
 
 TRAIN = True
-VER = 14
+VER = 15
 PATH_SIZES = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_sizes"
 PATH_REWARDS = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_rewards"
-num_episodes = 100
+num_episodes = 10000
 batch_size = 10
 learning_rate = 1e-3
 
@@ -54,6 +54,8 @@ class RemoteStrategy:
 
         self.network = nn.Sequential(
             nn.Linear(81, 256),
+            nn.ReLU(), 
+            nn.Linear(256, 256), 
             nn.ReLU(), 
             nn.Linear(256, 128), 
             nn.ReLU(), 
@@ -123,17 +125,21 @@ class RemoteStrategy:
         #Calculate reward for last action
         reward = 0
         if(not jsonData["active"]):
-            reward = -99
+            reward = -50
         else:
             reward = jsonData["size"] - self.oldsize
             if(self.oldpos != jsonData["pos"]):
-                reward+=0.05
+                reward+=0.01
         # Reward based on the position
         pos_reward = 0
         if(len(self.all_positions)>past_win):
-            pos_reward = 0.01 * np.sum(np.abs(np.mean(self.all_positions[-past_win:],0) - self.all_positions[-past_win]))       
-        #print("reward + pos_reward:",reward, "+", pos_reward)
-        return reward+pos_reward
+            pos_reward = 0.005 * np.sum(np.abs(np.mean(self.all_positions[-past_win:],0) - self.all_positions[-past_win]))
+        
+        # Reward based on the distance from the center
+        steps_to_center =  np.max(np.absolute(np.array(jsonData["pos"]) - np.array([20,20])))
+        center_reward = 0.01 * (19 - steps_to_center)
+        #print("reward + pos_reward + center_reward:",reward, "+", pos_reward, "+", center_reward)
+        return reward+pos_reward+center_reward
 
     # Do one training step
     def train_step(self):
@@ -261,7 +267,6 @@ class RemoteStrategy:
         elif fulljson["type"] == "gameData":
             jsonData = fulljson["payload"]
             if "pos" in jsonData.keys() and "tick" in jsonData.keys() and "active" in jsonData.keys() and "size" in jsonData.keys() and "vision" in jsonData.keys():              
-                
                 # Get the state based on the JsonData
                 state = self.get_state(jsonData)
                 if(len(state) != 82):
@@ -299,7 +304,7 @@ if __name__=="__main__":
     # Példányosított stratégia objektum
     hunter = RemoteStrategy()
     try:
-        hunter.network.load_state_dict(torch.load(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_13.p"))
+        hunter.network.load_state_dict(torch.load(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_14.p"))
         print("model loaded")
     except:
         print("model not found")
