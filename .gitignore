@@ -10,3 +10,4 @@ notes.md
 src/__pycache__
 /models
 end_sizes.txt
+HybridAgent.py

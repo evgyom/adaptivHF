@@ -231,3 +231,42 @@ Honteszka
     * batch std norm
     * random maps
     * check rewards
+    * 100 játékos validáció:
+        * átalgos méret:
+            * 03_blockade   32.533333
+            * 04_mirror    75.512195
+        * játékok száma:
+            * 02_base - 22
+            * 03_blockade - 36
+            * 04_mirror - 41
+        * meghalások szám:
+            * 02_base - 16
+            * 03_blockade - 6
+* Scenario 26
+    * model_25 folytatása
+    * rewards: azonos
+    * 200 ticks
+    * batch_size 20
+    * csak blockade és mirror térképek
+    * 1400 játék után:
+        * átalgos méret:
+            * 03_blockade   83.291667
+            * 04_mirror    101.255319
+        * játékok száma:
+            * 03_blockade - 52
+            * 04_mirror - 47
+        * meghalások szám:
+            * 03_blockade - 4
+* Scenario 27
+    * model_26 folytatás, minden azonos
+    * 1000 játék után:
+        * átalgos méret:
+            * 03_blockade   98.78
+            * 04_mirror    84.84
+        * játékok száma:
+            * 03_blockade - 53
+            * 04_mirror - 46
+        * meghalások szám:
+            * 03_blockade - 3
+            * 04_mirror - 1
+    * marginális javulás -> maradunk a model_26-nél
