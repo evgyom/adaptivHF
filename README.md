@@ -13,7 +13,7 @@ A megvalósításhoz pytorch-ot használtunk. A legjobb eredményeket produkál�
 * H3: 32 + ReLU
 * Kimenet: 9 + Softmax
 
-Tehát három rejtett réteget tartalmaz a modellünk.
+Tehát három rejtett réteget tartalmaz a modellünk. Néhány futtatás során négy rejtett réteget tartalmazó hálót alkalmaztunk, de egyszerűbb volt a háromrétegűnek hangolni a hiperparamétereit. 
 
 Az optimalizációs algoritmus: Adam 
 
@@ -24,7 +24,7 @@ A tanítás során több különböző jutalmazási rendszert alkalmaztunk, kül
 * Halál esetén egy megfelelő méretű büntetés.
 * Pozíció és mozgás alapú jutalmak:
     * Annak érdekében, hogy az ágens mozogjon, jutalmaztuk a mozgást. Ezzel jutalmazva azt is, hogy ha fal elött álva nem neki megy.
-    * Annak érdekében, hogy az ágens ne csak oda-vissza lépkedjen két mező között vagy korlátozott területen belül, egy mozgóátlagos megoldással jutalmaztuk a haladást.
+    * Annak érdekében, hogy az ágens ne csak oda-vissza lépkedjen két mező között vagy korlátozott területen belül, egy mozgóátlagos megoldással jutalmaztuk a haladást. Mivel az ágens nem kapja meg a pozíciót, ezért csak a környezet mozgása alapján tud következtetni a haladásra.
     * Bizonyos futtatások esetén jutalmaztuk, ha az ágens a térkép centruma felé halad. 
 
 ## Training
@@ -44,35 +44,32 @@ Továbbá a stabilabb tanulás érdekében, normalizáltuk a rewardokat.
 Honteszka
 
 ### Napló
+
+Az alábbi jegyzetek mutatják a kipróbált beállításokat. Ha egy scenario-nál nincs megemlítve akkor az adott paraméterből az előző futtatásnak megfelelőt vettük.
+
 * Scenario 1
     * Háló: 4 rejtett réteg
     * 50 ticks: rátanult egy csak balra menésre -> az esetek többségében ez egész jó
 * Scenario 3.
     * 50 ticks
-    * reward ha mozog -> csak egy irányba megy
+    * plusz reward ha mozog -> csak egy irányba megy
 * Scenario 4.
     * 300 tick
     * Szintén csak egy irányba megy.
 * Scenario 5.
     * 50 tick
-    * kisebb háló
+    * kisebb háló: 81 - 256 - 128 - 32 - 9
 * Scenario 6.
-    * kisebb háló: 
-        * 81 - 256 - 128 - 32 - 9
     * kisebb learning rate: 1e-4
     * updated discounting
     * 50 tick 
     * 1000 játék -> nem tanult túl sok mindent
 * Scenario 7.
     * Scenario 6 tovább edzése
-    * kisebb háló: 
-        * 81 - 256 - 128 - 32 - 9
     * kisebb learning rate: 1e-4
     * 50 ticks
     * 3500 játék után -> randomba tolta
 * Scenario 8.
-    * háló: 
-        * 81 - 256 - 128 - 32 - 9
     * 50 ticks
     * learning_rate: 1e-3
     * 3000 játék után: nem teljesen egysíkú stratégia, nem teljesít túl rosszul és úgy tűnik, hogy egyértelmű döntést hoz
@@ -102,7 +99,7 @@ Honteszka
         * Ha megehető kolléga: érték
         * Ha nagy kolléga: -érték
     * 200 ticks
-    * probléma: ha meghal akkor minden körben megkapja a negatív reward-ot -> nem is tanult jól
+    * BUG: ha meghal akkor minden körben megkapja a negatív reward-ot -> nem is tanult jól
 * Scenario 12.
     * mode_9 továbbedzése
     * háló marad
@@ -111,7 +108,7 @@ Honteszka
     * 200 ticks
     * halál utáni tanulás fixed
     * 400 játék: -> 
-    * Probléma: ha meghal akkor nem kerül be a -99
+    * BUG: ha meghal akkor nem kerül be a -99
 * Scenario 13.
     * model_12 tovább
     * háló marad
@@ -217,7 +214,7 @@ Honteszka
     * 50 tick
     * Csak keresztbe megy
 * Scenario 24
-    * Csak base_map
+    * Csak base_map -> Ezt sem tudta megtanulni
 * Scenario 25
     * model_13 folytatása
     * rewards:
