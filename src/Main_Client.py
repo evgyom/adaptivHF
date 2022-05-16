@@ -1,6 +1,5 @@
 #encoding: utf-8
 from datetime import datetime
-
 import time
 from Client import SocketClient
 import json
@@ -14,18 +13,19 @@ from torch import optim
 ACTIONS = ["00","0-","0+","+0","+-","++","-0","--","-+"]
 base_path  = r"C:/Users/Misi/01_SULI/02_10_felev_MSC_2/09_adaptiv/adapt_hf/adaptivegame/src/maps/"
 MAPS = ["02_base.txt", "03_blockade.txt", "04_mirror.txt"]
+MAPS = ["03_blockade.txt", "04_mirror.txt"]
 
-TRAIN = True
-VER = 25
+TRAIN = False
+VERBOSE = False
+VER = 27
 PATH_SIZES = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_sizes"
 PATH_REWARDS = r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\src\log\past_rewards"
-num_episodes = 10000
-batch_size = 2
-learning_rate = 1e-3
 
 class RemoteStrategy:
-
-    def __init__(self):
+    def __init__(self, n_episodes, batch_size, l_rate):
+        self.num_episodes = n_episodes
+        self.batch_size = batch_size
+        self.learning_rate = l_rate
         # Dinamikus viselkedéshez szükséges változók definíciója
         self.last_pos = None
         self.all_positions = []
@@ -33,12 +33,12 @@ class RemoteStrategy:
         self.last_action = None
         self.last_state = None
         self.last_active = True
-
-        self.last_map = "02_base.txt"
+        self.last_map = "04_mirror.txt"
 
         # Data for validation
         self.total_rewards = []
         self.total_end_sizes = []
+        self.all_maps = []
 
         #Training data 
         self.batch_rewards = []
@@ -61,7 +61,7 @@ class RemoteStrategy:
             nn.Linear(32, 9), 
             nn.Softmax(dim=-1))     
 
-        self.optimizer = optim.Adam(self.network.parameters(),lr=learning_rate)
+        self.optimizer = optim.Adam(self.network.parameters(),lr=self.learning_rate)
         
     # Perform prediction based on agent state
     def predict(self, state):
@@ -190,9 +190,11 @@ class RemoteStrategy:
                 if(score["name"] == "RemotePlayer"):
                     if(score["active"]):
                         self.total_end_sizes.append(score["maxSize"])
+                        self.all_maps.append(self.last_map)
                         print("  score:", score["maxSize"], "map:", self.last_map[0].replace(".txt",""))
                     else:
-                        self.total_end_sizes.append(0)      
+                        self.total_end_sizes.append((-1)*score["maxSize"])
+                        self.all_maps.append(self.last_map)
                         print("  died at:", score["maxSize"], "map:", self.last_map[0].replace(".txt",""))     
             if(TRAIN):
                 if(self.ep_counter % 50 == 0):
@@ -216,7 +218,7 @@ class RemoteStrategy:
                 self.last_size = 5
                 self.last_pos = None
 
-                if(self.batch_counter < batch_size):
+                if(self.batch_counter < self.batch_size):
                     time.sleep(0.01)                    
                     next_map = choice(MAPS, 1)
                     self.reset_game(sendData, next_map)
@@ -230,7 +232,7 @@ class RemoteStrategy:
                     self.batch_actions = []
                     self.batch_states = []
                     self.batch_counter = 0
-                    if(self.ep_counter >= num_episodes):
+                    if(self.ep_counter >= self.num_episodes):
                         self.interrupt_game(sendData)
                         #Save the last model
                         self.save_model()
@@ -240,12 +242,9 @@ class RemoteStrategy:
                         self.last_map = next_map       
             else:
                 # In eval mode
-                if(self.ep_counter >= num_episodes):
+                if(self.ep_counter >= self.num_episodes):
                     time.sleep(0.1)
                     self.interrupt_game(sendData)
-                    print("Sizes", self.total_end_sizes)
-                    print("Average size:", np.mean(self.total_end_sizes))
-                    print("Max size:", max(self.total_end_sizes))
                 else:
                     time.sleep(0.1)
                     next_map = choice(MAPS, 1)
@@ -288,19 +287,22 @@ class RemoteStrategy:
                     self.last_size = jsonData["size"]
                     self.last_pos = jsonData["pos"].copy()
                     self.last_active = jsonData["active"]
-                else:
-                    print(pred)
-                    #actstring = actions[np.argmax(pred)]
+                else: 
                     actstring = choice(ACTIONS, 1, p=pred/np.sum(pred))[0]
-                    print(actstring)
+                    if(VERBOSE):
+                        print(pred)
+                        print(actstring)
                 # Akció JSON előállítása és elküldése
                 sendData(json.dumps({"command": "SetAction", "name": "RemotePlayer", "payload": actstring}))
 
 if __name__=="__main__":
+    num_episodes = 10000
+    batch_size = 20
+    learning_rate = 1e-3
     # Példányosított stratégia objektum
-    hunter = RemoteStrategy()
+    hunter = RemoteStrategy(num_episodes,batch_size,learning_rate)
     try:
-        hunter.network.load_state_dict(torch.load(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_13.p"))
+        hunter.network.load_state_dict(torch.load(r"C:\Users\Misi\01_SULI\02_10_felev_MSC_2\09_adaptiv\adapt_hf\adaptivegame\models\model_26.p"))
         print("model loaded")
     except:
         print("model not found")
