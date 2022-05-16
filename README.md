@@ -39,9 +39,12 @@ Alkalmaztuk a reward discounting-ot, aminek segítségével összegezzük a rewa
 
 Továbbá a stabilabb tanulás érdekében, normalizáltuk a rewardokat.
 
-### Továbbfejlesztett ágensek
+### Továbbfejlesztett ágensek - Advanced Bot
+#### Felépítse
+A tanításhoz írtunk egy saját botot is, hogy nehezebb ellenfelek ellen is tudjon játszani az ágensünk. A logikájának az alapja a NaiveHunterStrategy volt, tehát ő is a legnagyobb élelem vagy játékos felé ment. Csakhogy a botok egyik problémája az, hogy mikor semmit nem látnak, akkor egyhelyben maradnak, majd random mennek valamerre. Ezt a részét fejlesztetük tovább úgy, hogy a botnak adtunk memóriát. Tehát a látómezejével egy térképet frissítettünk. Így ha nem lát semmit aktuálisan, akkor majd el tud indulni, a térképen egy korábban megjegyzett kaja felé.
 
-Honteszka
+#### Tovább fejlesztési lehetőségek
+Amire sajnos már nem jutott időnk, hogy a bot lehetne felfedező is, tehát az elsődleges célja hogy bemenjen középre, majd bejárja a sarkokat. Természetesen közben az élelem szerzés is célja. Ezzel a logikával nagyobb eséllyel találkozott volna össze az ágensünkkel, és így az ágensünk gyorsabban tanult volna meg menekülni, vagy épp támadni. Másik fejlesztési javaslat, hogy ki tudja kerülni az akadályokat, mert jelenleg könnyen beragadnak L alakú falakba.
 
 ### Napló
 
