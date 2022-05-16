@@ -1,239 +1,233 @@
-<img src="/pics/GPK_BME_MOGI.png">
+# Adaptiv rendszerek modellezése - HF
+Honti Kristóf, Tatai Mihály
 
-# AdaptIO
+## Modell
+A feladat megoldására a megerősítéses tanulást választottuk, pontosabban a policy gradient módszert. A módszer lényege, hogy a neurális háló modell kimenete az egyes akciókhoz köthető valószínüséget adja vissza. A háló bemenete pedig az ágens látómezeje (néhány modellünk esetén a pozíció). A célfüggvény pedig a reward-okkal súlyozott logloss. Direkt módon a célfüggvény maximalizálása nem adja meg az optimális policy-t, de a gradiense mindig a megfelelő irányba mutat.
 
-Az AdaptIO az "Adaptív rendszerek modellezése" tárgyhoz készült játék felület. A tárgy sikeres teljesítéséhez 
-szükséges házi feladat egy agent elkészítése, mely elboldogul az AdaptIO játékban. A cél az életben maradás.
+### Neurális háló
 
-A feladat sikeres teljesítésének feltétele az agent kódjának beadása, illetve egy rövid prezentáció a szemeszter
-végén, melyen az agent logikájának kialakítását és betanításának főbb lépéseit mutatják be a csapatok. Az agenteket
-ez után természetesen egymással is megversenyeztetjük!
+A megvalósításhoz pytorch-ot használtunk. A legjobb eredményeket produkáló háló az alább felsorol szélességű dense rétegekből és aktivációs függvényekből áll.
+* Bemeneti: 81 
+* H1: 256 + ReLU
+* H2: 128 + ReLU
+* H3: 32 + ReLU
+* Kimenet: 9 + Softmax
 
-A feladat elkészítése során a tárgyban tanult genetikus, bakteriális vagy neurális háló alapú megoldásokat preferáljuk.
-Nem tiltott tovább lépni se és a tárgyban esetlegesen nem érintett technikákat alkalmazni. A feladat elkészítése során
-a környezet szabadon átalakítható, viszont a bemutatás egységesen a master branchen elérhető verziót fogjuk használni.
+Tehát három rejtett réteget tartalmaz a modellünk.
 
-<img src="/pics/displayy.png" width="600">
+Az optimalizációs algoritmus: Adam 
 
-## Telepítés
+### Jutalmak
 
-Repository letöltése vagy clonozása.
+A tanítás során több különböző jutalmazási rendszert alkalmaztunk, különböző együtthatókkal.
+* Élelem, bekebelezés esetén: a méret növekedés értéke közvetlenül volt a reward.
+* Halál esetén egy megfelelő méretű büntetés.
+* Pozíció és mozgás alapú jutalmak:
+    * Annak érdekében, hogy az ágens mozogjon, jutalmaztuk a mozgást. Ezzel jutalmazva azt is, hogy ha fal elött álva nem neki megy.
+    * Annak érdekében, hogy az ágens ne csak oda-vissza lépkedjen két mező között vagy korlátozott területen belül, egy mozgóátlagos megoldással jutalmaztuk a haladást.
+    * Bizonyos futtatások esetén jutalmaztuk, ha az ágens a térkép centruma felé halad. 
 
-    git clone https://gitlab.com/microlab1/public-projects/adaptivegame
+## Training
 
-### Függőségek
+A modell a példatérképek közül a "04_mirror" térképen kezdett tanulni. A módszerünk az volt, hogy rövidebb játékokat játszattunk, ameddig "rá nem szokott" az evésre és közledésre. Ezután növeltük a tick számot, hogy komplexeb szituációkkal is megismerkedhessen az ágens. 
 
-A program **python 3.7** verzióval készült. <br>
-A futtatáshoz az alábbi python packagekre lesz szükség:
-- numpy
-- pygame
+Az ágens az olyan térképeken teljesít jobban, amelyeken vannak akadályok.
 
-### Indítás
+### Reward discounting & normalization
 
-`Main.py` futtatása: <br>
-Elindítja a játékot. Minden szükséges paraméter a Config.py fileban található, indítás előtt
-a paraméterek módosíthatóak.
+Alkalmaztuk a reward discounting-ot, aminek segítségével összegezzük a reward-okat, ezáltal a megelőző akciók is jutalmazva vannak, egy exponenciálisan "lecsengő" súlyozással.
 
-`Example_Client_Main.py` futtatása: <br>
-Csatlakozó kliens játékos. Ez a file ad mintát az elkészítendő játékos kódjához. A játékosok
-saját gépről tudnak majd futni socket kapcsolaton keresztül bejelentkezve.
+Továbbá a stabilabb tanulás érdekében, normalizáltuk a rewardokat.
 
-## Szabályok
+### Továbbfejlesztett ágensek
 
-A játékban minden agent egy kockányi mezőt foglal el. Végrehajtható akcióként egy iterációban 9 választási lehetősége van.
-Vagy helyben marad vagy a 8 szomszédos mező valamelyikére mozog.
+Honteszka
 
-Az agentek rendelkeznek mérettel, mely a játék kezdetén egy alap paraméter (5). Az agentek mérete a játék során növelhető táplálkozással.
-A játéktéren találhatók kaja mezők különböző intenzitással (1, 2, 3). Ha az agent kaját tartalmazó mezőre lép
-a bekebelezés automatikusan megtörténik és az agent mérete a kaja méretével növekszik. A pályán továbbá találhatóak falak, melyek nem elmozdíthatóak, nem termelődik rajtük kaja
-és rálépni se lehet. Az agentek átlátnak a falakon. A játokosok a következő látomezővel rendelkeznek:
-
-<img src="/pics/latomezo.png" width="200"> <br>
-
-Ha több játokos azonos időben ugyan arra a mezőre lépne:
-- először ellenőrizzük, hogy a legnagyobb játékos meg tudja-e enni a második legnagyobbat.
-- ha igen, mindenkit megeszik.
-- ha nem a játékosok korábbi helyükön maradnak, mintha nem léptek volna.
-
-A bekebelezés (egyik játékos megeszi a másikat) akkor jön létre, ha a kisebb játékos méretét felszorozzuk
-a Config.py fileban található MIN_RATIO paraméterrel és még így is kisebb, mint a nagyobb játékos.
-Minden más esetben a játékosok közti méretkülönbség túl kicsi, így csak lepattanak egymésról és korábbi helyükön maradnak.
- 
-### Pálya elemek:
-
-<img src="/pics/map.png" width="200"> <br>
-
-| Érték |  Jelentés   |   Szín |
-|-------|:-----------:|-------:|
-| 0     |  üres mező  | szürke |
-| 1     |  kaja LOW   |   zöld |
-| 2     | kaja MEDIUM |   zöld |
-| 3     |  kaja HIGH  |   zöld |
-| 9     |     fal     | fekete |
-
-Előre generált pályák a maps mappában találhatóak, de további pályák is generálhatóak a feladat minél jobb
-megoldása érdekében. Pálya generáláshoz hasznos lehet a **maps.xlsx** fájl. 
-
-Javaslat pályageneráláshoz:
-- Árdemes a `01_empty_ringet` másolni és csak a keretezett bal felső sarokba rajzolni, a többi tükröződik.
-- Egy meglévő pálya lapján jobb klikk
-- Áthelyezés vagy másolás
-- Válasszuk a (végére) opciót
-- Legyen másolat opció kiválasztása
-- OK
-- Módosítsuk a pályát
-- Jelöljük ki a pálya elemit (Ctrl+C)
-- Másoljuk egy txt fileba a maps mappán belül (Ctrl+V)
-- Figyeljünk, hogy ne legyen üres sor, a fájl 40 sort tartalmazzon
-
-Ezen lépések alkalmazásával az összes kényelmi formázás megtartható.
-
-### Kaja frissítési térkép
-
-<img src="/pics/foodupdate.png" width="200">
-
-Minden mezőhöz a pályán tartozik egy kaja termelődési valószínűség, mely segítségével a játék
-lefutása során a kaják térképen való elhelyezkedése jelentősen megváltozhat. A Config.py fileban
-rögzített paraméterek szerint bizonyos tickenként valamilyen térkép elosztás szerint random helyeken
-1 értékű kaják jelennek meg, melyek a tickek során felhalmozódhatnak 2 vagy 3 szintig. 
-
-Előre generált valószínűségi térképek a fieldupdate mappában találhatóak, de további térképek 
-is generálhatóak a feladat minél jobb megoldása érdekében. 
-Térkép generáláshoz hasznos lehet a **fieldupdate.xlsx** fájl. 
-
-## Útmutató
-
-### Paraméterek
-
-**Config.py** <br>
-Ez a file tartalmazza a játék főbb beállításait, melyeket a készülés során is lehet állítani. Illetve
-itt vannak meghatározva a játékszabályok és a kijelző színpalettája.
-
-| **Paraméter**         | **Default érték**             | **Magyarázat**                                         |
-|-----------------------|-------------------------------|--------------------------------------------------------|
-| **#GameMaster**       |                               |                                                        |
-| GAMEMASTER_NAME       | "master"                      | Game master név                                        |
-| IP                    | "localhost"                   | A játék IP címe                                        |
-| PORT                  | 42069                         | A játék által nyitott port                             |
-| DEFAULT_TICK_LENGTH_S | 0.3                           | Egy TICK lefutási ideje                                |
-| DISPLAY_ON            | True                          | Kijelző bekapcsolása                                   |     
-| WAIT_FOR_JOIN         | 20                            | Indítás utáni várakozás a játékosok bejelntkezéséhez   |    
-| LOG                   | True                          | Logolás be/kikapcsolása                                |           
-| LOG_PATH              | './log'                       | Logfileok mentési helye                                |  
-| **#Engine**           |                               |                                                        |           
-| MAPPATH               | "./maps/02_base.txt"          | Játék térkép elérési útja                              |
-| FIELDUPDATE_PATH      | "./fieldupdate/01_corner.txt" | Kaja termelődés valószínűségi térképének elérési útja  |
-| STARTING_SIZE         | 5                             | Kezdő játékos méret                                    |
-| MIN_RATIO             | 1.1                           | Bekebelezési arány (a kisebb játékos méretét tekintve) |
-| STRATEGY_DICT         | {}                            | Játékos stratégiák                                     |
-| VISION_RANGE          | 5                             | Játékosok látási távolsága                             |
-| UPDATE_MODE           | "statistical"                 | Kaja újratermelődés módja (static - nincs termelődés)  |
-| DIFF_FROM_SIDE        | 1                             | Kezdő pozíciók távolsága a pálya szélétől (4 sarok)    |
-| FOODGEN_COOLDOWN      | 10                            | Kaja termelődés ciklusideje tickekben                  |
-| FOODGEN_OFFSET        | 10                            | Kaja termelődés először ebben a Tickben                |
-| FOODGEN_SCALER        | 0.3                           | Kaja termelődés valószínűségi térképének módosítója.   |
-| MAXTICKS              | 100                           | Játék maximális Tick száma                             |
-| SOLO_ENABLED          | True                          | A játék futásának engedélyezése solo módba             |
-
-### Játékos stratégiák
-
-**Player.py** <br>
-Ez a file tartalmaz pár előre megírt botot, melyekkel tesztelhető a rendszer és az új fejlesztésű játékos teljesítménye.
-
-**RemotePlayerStrategy:**<br>
-A távoli csatlakozású játékos. Erre a beállításra lesz szükség a saját játékosunk futtatásához.
-A `Main_Client.py`-ban kódolt 'hunter' így tud csatlakozni a GameMasterhez.
-
-**DummyStrategy:** <br>
-Indítás után meghaló játékos.
-
-**RandBotStrategy:** <br>
-Random akciókat választó játékos.
-
-**NaiveStrategy:** <br>
-A látóterének legnagyobb értékű kajája felé haladó játékos (egyenlőség esetén a bal felső a célpont).
-
-**NaiveHunterStrategy:** <br>
-A látóterének legnagyobb értékű kajája felé haladó játékos (egyenlőség esetén a bal felső a célpont), de ha másik játékost lát és meg tudja enni, akkor vadászk rá.
-
-## Motor működése
-Engine.py
-
-A játékmestert és a játékmotort alapvetően a feladat során nem kell programozni, de a működését érdemes megérteni.   
-A motor az alábbi lépéseket végzi el minden ciklusban ebben a sorrendben:   
-- Kilépési feltétel vizsgálata (maximális tick szám, élő játékosok száma)
-- Tervezett akciók végrehajtása (két karakterből álló stringek (egy-egy tengelyhez): "0" a tengely menti helyben maradás, "+" a pozitív irányú lépés, "-" a negatív irányú lépés)
-- A tervezett akciók után kialakult ütközések megoldása (bekebelezés, visszapattanás, lásd fentebb)
-- Játékosok pozíciójának és új méretének véglegesítése
-- Étel növesztése a térképen
-- Log információk írása
-- Tick sorszám inkrementálása
-- Látótérben található információk kiküldése a játékosoknak
-
-## Játékmester működése
-Gamemaster.py
-
-A játékmester a motort és a kommunikációs szervert koordinálja, fogadja a játék irányító üzeneteket.   
-A játékmester állapotai a következők:
-- PRERUN: Az első futás előtti állapot, ilyenkor a motor már futáskész, a szerver képes fogadni a kapcsolatokat, de csak akkor indul el, ha minden távoli játékos felregisztrált a szerverre, vagy ha letelik az előre beállított időtartam le nem telik (30 másodperc).
-- RUNNING: A játék maga fut, a motort ciklikusan léptetjük. A megadott ciklusidő a feldolgozási ciklusok indításai között eltelt idő.
-- WAIT_COMMAND: A játék futásának végén ebbe az állapotba kerül, itt a reset GameControl paranccsal lehetséges új játékot indítani akár új térkép betöltése mellett is. A maximális várakozási idő lejártával a program automatikusan kilép.
-- WAIT_START: A reset parancs után a játék ebbe az állapotba kerül. Ekkor start GameControl paranccsal lehetséges az indítás. Ebben az állapotban a játék végtelen ideig várakozik.
-
-Az összes fenti állapotból ki lehet lépni interrupt GameControl paranccsal.
-A játékosok a szerverre való csatlakozáskor meg kell, hogy adják nevüket, a SetName paranccsal, egyéb esetben nem kapnak információt a játékmestertől.
-
-## Kliens-szerver kommunikáció
-Example_Client_Main.py
-
-A feladat során a játékba kliensként van lehetőség becsatlakozni. A kommunikáció kétirányú, TCP/IP protokollon alapuló socket kommunikáció, melyet JSON formátumban valósítunk meg.   
-https://www.w3schools.com/js/js_json_intro.asp
-
-Python nyelven dict, list, str és float értékekkel a JSON funkcionalitást egyszerűen reprodukálhatjuk, a json.loads() és a json.dumps() parancsokkal könnyedén konvertálhatunk ilyen struktúrákat egyik formátumból a másikba.
-Az alábbiakban az érvényes üzenet struktúrák kerülnek részletezésre.
-Fontos kiegészítés: A kliens-szerver kommunikáció során futtatókörnyezettől függően 2-5 ms késleltetés felléphet tickenként, így érdemes az akciót előállító folyamatot a játékmotor ciklusidejénél legalább ennyivel rövidebbre tervezni. 
-
-### Szerveroldali üzenetek
-Ezen üzeneteket a szerver küldi a kliensnek.
-Két kötelező kulccsal rendelkeznek, ezek: 
-- 'type' (leaderBoard, readyToStart, started, gameData, serverClose)
-- 'payload' (az üzenet adatrésze)
-
-A 'payload' tartalma típusfüggő:
-
-- 'leaderBoard' type a játék végét jelzi, a payload tartalma **{'ticks': a játék hossza tickekben, 'players':[{'name': jáétékosnév, 'active': él-e a játékos?, 'maxSize': a legnagyobb elért méret a játék során},...]}**
-- 'readyToStart' type esetén a szerver az indító üzenetre vár esetén, a payload üres (**None**)
-- 'started' type esetén a játék elindul, tickLength-enként kiküldés és akciófogadás várható payload **{'tickLength': egy tick hossza }**
-- 'gameData' type esetén az üzenet a játékos által elérhető információkat küldi, a payload:
-                                    **{"pos": abszolút pozíció a térképen, "tick": az aktuális tick sorszáma, "active": a saját életünk állapota,
-                                    "size": saját méret, "vision": [{"relative_coord": az adott megfigyelt mező relatív koordinátája,
-                                                                    "value": az adott megfigyelt mező értéke (0-3,9),
-                                                                    "player": None, ha nincs aktív játékos, vagy
-                                                                            {name: a mezőn álló játékos neve, size: a mezőn álló játékos mérete}},...] }**
-- 'serverClose' type esetén a játékmester szabályos, vagy hiba okozta bezáródásáról értesülünk, a payload üres (**None**)
-
-### Kliensoldali üzenetek
-Az alábbi üzenetekkel lehetünk ráhatással a játékmester és a játékmotor viselkedésére.
-
-Az elküldött adat struktúrája minden esetben **{"command": Parancs típusa, "name": A küldő azonosítója, "payload": az üzenet adatrésze}**   
-Az elérhető parancsok a következők:
-- 'SetName' A kliens felregisztrálja a saját nevét a szervernek, enélkül a nevünkhöz tartozó üzenetek nem térnek vissza.
-                 Tiltott nevek: a configban megadott játékmester név és az 'all'.
-- 'SetAction' Ebben az esetben a payload az **akció string**, amely két karaktert tartalmaz az X és az Y koordináták (matematikai mátrix indexelés) menti elmozdulásra. A karakterek értékei **'0'**: helybenmaradás az adott tengely mentén, **'+'** pozitív irányú lépés, **'-'** negatív irányú lépés lehetnek. Amennyiben egy tick ideje alatt nem küldünk értéket az alapértelmezett '00' kerül végrehajtásra.
-- 'GameControl' üzeneteket csak a Config.py-ban megadott játékmester névvel lehet küldeni, ezek a játékmenetet befolyásoló üzenetek. A payload az üzenet típusát (type), valamint az ahhoz tartozó 'data' adatokat kell, hogy tartalmazza. 
-    - 'start' type elindítja a játékot egy "readyToStart" üzenetet küldött játék esetén, 'data' mezője üres (**None**)
-    - 'reset' type egy játék után várakozó 'leaderBoard'-ot küldött játékot állít alaphelyzetbe. A 'data' mező **{'mapPath':None, vagy elérési útvonal, 'updateMapPath': None, vagy elérési útvonal}** formátumú, ahol None esetén az előző pálya és növekedési map kerül megtartásra, míg elérési útvonal megadása esetén új pálya kerül betöltésre annak megfelelően.
-    - 'interrupt' type esetén a 'data' mező üres (**None**), ez megszakítja a szerver futását és szabályosan leállítja azt.
-
-
-## Logolás
-A Config.py fileban engedélyezhető a logolás. Ebben az esetben a játékmotor minden lépés végén beleír a megfelelő útvonalon található fileba. Minden lépést egyetlen sortörés karakter választ el. A lépések adatai az alábbi JSON formátumban kerülnek mentésre:   
-**{"tick:": lépés sorszáma, "actions": 4 hosszú akcióstring tömb, "player_info":[{"name": játékos neve, "pos": játékos pozíciója, "size": játékos aktuális mérete},...], "field":játéktér játékosok nélkül}**
-
-## Credits
-Gyöngyössy Natabara (gyongyossy.natabara@mogi.bme.hu) <br>
-Nagy Balázs (nagybalazs@mogi.bme.hu)
-
-## Bug
-
-- scalinget javítani
+### Napló
+* Scenario 1
+    * Háló: 4 rejtett réteg
+    * 50 ticks: rátanult egy csak balra menésre -> az esetek többségében ez egész jó
+* Scenario 3.
+    * 50 ticks
+    * reward ha mozog -> csak egy irányba megy
+* Scenario 4.
+    * 300 tick
+    * Szintén csak egy irányba megy.
+* Scenario 5.
+    * 50 tick
+    * kisebb háló
+* Scenario 6.
+    * kisebb háló: 
+        * 81 - 256 - 128 - 32 - 9
+    * kisebb learning rate: 1e-4
+    * updated discounting
+    * 50 tick 
+    * 1000 játék -> nem tanult túl sok mindent
+* Scenario 7.
+    * Scenario 6 tovább edzése
+    * kisebb háló: 
+        * 81 - 256 - 128 - 32 - 9
+    * kisebb learning rate: 1e-4
+    * 50 ticks
+    * 3500 játék után -> randomba tolta
+* Scenario 8.
+    * háló: 
+        * 81 - 256 - 128 - 32 - 9
+    * 50 ticks
+    * learning_rate: 1e-3
+    * 3000 játék után: nem teljesen egysíkú stratégia, nem teljesít túl rosszul és úgy tűnik, hogy egyértelmű döntést hoz
+* Scenario 9.
+    * model_8 további edzése
+    * learning_rate: 1e-3
+    * 100 ticks
+    * háló: marad
+    * 3000 játék után: nem teljesít túl rosszul, egyértlemű döntéseket hoz
+* Scenario 10.
+    * model_9 fejlesztése
+    * 200 ticks
+    * háló: marad
+    * nincs reward, ha mozog
+    * 3000 játék: -> ellustult
+* Scenario 11.
+    * model_9 fejlesztése
+    * háló marad
+    * van plusz reward, ha a pozíciók mozgóátlagából kivonva a kezdő pozíciót
+        * move reward: 0.05
+        * pos reward: 0.01
+        * past_win: 10
+        * kaja reward: kaja value
+        * death reward: -99
+    * vision update:
+        * ha nem megehető kolléga van: -1
+        * Ha megehető kolléga: érték
+        * Ha nagy kolléga: -érték
+    * 200 ticks
+    * probléma: ha meghal akkor minden körben megkapja a negatív reward-ot -> nem is tanult jól
+* Scenario 12.
+    * mode_9 továbbedzése
+    * háló marad
+    * reward: marad
+    * vision update: marad
+    * 200 ticks
+    * halál utáni tanulás fixed
+    * 400 játék: -> 
+    * Probléma: ha meghal akkor nem kerül be a -99
+* Scenario 13.
+    * model_12 tovább
+    * háló marad
+    * reward: 
+        * move reward: 0.025
+        * pos reward: 0.01
+        * past_win: 10
+        * kaja reward: kaja value
+        * death reward: -99
+    * vision update: marad
+    * 200 ticks
+    * halál nincs bűntetve: fixed! mégse
+    * 500 játék -> sajnos a halálból nem tanult, de jól fejlődött a rewardok miatt
+* Scenario 14.
+    * model_13 tovább
+    * háló marad
+    * reward: marad
+    * vision update: marad
+    * 200 ticks
+    * halál nincs bűntetve: fixed!
+    * map: random choice from the three current maps: túltanulta a mirror map-et
+* Scenario 15.
+    * háló: 83- 256 - 256 - 128 - 32 - 9
+    * reward: 
+        * move reward: 0.01
+        * pos reward: 0.005
+        * past_win: 10
+        * center_reward: 0.01
+        * kaja reward: kaja value
+        * death reward: -50
+    * vision update: marad
+    * 200 ticks
+    * map: random choice from the three current maps
+    * 800 játék után teljesen random akciók
+* Scenraio 16.
+    * mint scenario 15. csak nagyob learning rate -> rátanult a jobbrahaladásra
+    * learning rate: 5e-3
+* Scenraio 17.
+    * learning rate: 5e-3
+    * mint scenario 16, csak nagyobb move reward, és kisebb halál büntetése
+    * rewards: 
+        * move reward: 0.05
+        * pos reward: 0.005
+        * past_win: 10
+        * center_reward: 0.01
+        * kaja reward: 2*(kaja value)
+        * death reward: -30
+    * 1300 játék után: -> csak felfelé megy, teljesen egyértelmű döntés
+* Scenario 18
+    * learning rate: 1e-3
+    * 50 ticks
+    * rewards: 
+        * move reward: 0.05
+        * pos reward: 0.005
+        * past_win: 10
+        * center_reward: 0.01
+        * kaja reward: 2*(kaja value)
+        * death reward: -30
+    * 1350 játék -> nem ügyes. inkább marad a sarokban gyakran
+* Sceario 19
+    * learning rate, model: marad
+    * 50 ticks
+    * rewards:
+        * rewards: 
+        * move reward: 0.05
+        * pos reward: 0
+        * past_win: 10
+        * center_reward: 0.01
+        * kaja reward: kaja value
+        * death reward: -5
+    * 2000 játék: elindul a center felé, de egy kicsit határozatlan
+* Scenraio 21:
+    * bemenetként megkapja a pozíciót is
+    * rewards:
+        * move reward: 0
+        * pos reward: 0.1
+        * past_win: 5
+        * center_reward: 0.1 (if steps<10), 0.2 (if steps<5) 
+        * kaja reward: kaja value
+        * death reward: -5
+    * pos_reward túl nagy. csak egy irányba megy
+* Scenario 22:
+    * bemenetként megkapja a pozíciót is
+    * rewards:
+        * move reward: 0.05
+        * pos reward: 0.01
+        * past_win: 5
+        * center_reward: 0.1 (if steps<10), 0.2 (if steps<5) 
+        * kaja reward: kaja value
+        * death reward: -5
+    * 50 tick
+    * nagyon rátanult a haladás reward-ra
+* Scenario 23:
+    * bemenetként megkapja a pozíciót is
+    * rewards:
+        * move reward: 0.02
+        * pos reward: 0.01
+        * past_win: 5
+        * center_reward: 0.1 (if steps<10), 0.2 (if steps<5) 
+        * kaja reward: kaja value
+        * death reward: -5
+    * normalizálni a rewardot az egész batch-re
+    * 50 tick
+    * Csak keresztbe megy
+* Scenario 24
+    * Csak base_map
+* Scenario 25
+    * model_13 folytatása
+    * rewards:
+        * move reward: 0.02
+        * pos reward: 0.01
+        * past_win: 10
+        * kaja reward: kaja value
+        * death reward: -5
+    * 200 ticks
+    * batch_size 20
+    * batch std norm
+    * random maps
+    * check rewards
