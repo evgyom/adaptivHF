@@ -1,6 +1,10 @@
 # Adaptiv rendszerek modellezése - HF
 Honti Kristóf, Tatai Mihály
 
+## Requirements
+A requirements.txt file-ban.
+
+
 ## Modell
 A feladat megoldására a megerősítéses tanulást választottuk, pontosabban a policy gradient módszert. A módszer lényege, hogy a neurális háló modell kimenete az egyes akciókhoz köthető valószínüséget adja vissza. A háló bemenete pedig az ágens látómezeje (néhány modellünk esetén a pozíció). A célfüggvény pedig a reward-okkal súlyozott logloss. Direkt módon a célfüggvény maximalizálása nem adja meg az optimális policy-t, de a gradiense mindig a megfelelő irányba mutat.
 
